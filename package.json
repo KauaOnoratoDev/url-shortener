@@ -1,0 +1,54 @@
+{
+    "name": "url-shortener",
+    "version": "1.0.0",
+    "description": "A lightweight and self-hosted URL shortener",
+    "main": "index.js",
+    "scripts": {
+        "dev": "tsx watch src/index.ts",
+        "build": "tsc",
+        "start": "node dist/index.js",
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
+        "format": "prettier . --write",
+        "format:check": "prettier . --check",
+        "test": "jest",
+        "test:coverage": "jest --coverage",
+        "prepare": "husky"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/KauaOnoratoDev/url-shortener.git"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/KauaOnoratoDev/url-shortener/issues"
+    },
+    "homepage": "https://github.com/KauaOnoratoDev/url-shortener#readme",
+    "devDependencies": {
+        "@eslint/js": "^10.0.1",
+        "@types/jest": "^30.0.0",
+        "@types/node": "^26.1.1",
+        "eslint": "^10.7.0",
+        "eslint-config-prettier": "^10.1.8",
+        "globals": "^17.7.0",
+        "husky": "^9.1.7",
+        "jest": "^30.4.2",
+        "lint-staged": "^17.0.8",
+        "prettier": "^3.9.5",
+        "ts-jest": "^29.4.11",
+        "tsx": "^4.23.1",
+        "typescript": "^5.9.3",
+        "typescript-eslint": "^8.64.0"
+    },
+    "lint-staged": {
+        "*.{ts,tsx}": [
+            "eslint --fix",
+            "prettier --write"
+        ],
+        "*.{json,md,yml,yaml}": [
+            "prettier --write"
+        ]
+    }
+}
