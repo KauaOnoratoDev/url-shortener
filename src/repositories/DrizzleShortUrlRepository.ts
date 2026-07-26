@@ -1,15 +1,10 @@
-import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq } from 'drizzle-orm';
 import { ShortUrlRepository } from './ShortUrlRepository';
 import { shortUrlsTable as urls } from '../db/schemas/shortUrls';
-import { db } from '../db';
+import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 
 export class DrizzleShortUrlRepository implements ShortUrlRepository {
-    db: NodePgDatabase;
-
-    constructor() {
-        this.db = db;
-    }
+    constructor(private db: NodePgDatabase) {}
 
     async create(fullUrl: string, userId: string): Promise<number> {
         const [result] = await this.db
