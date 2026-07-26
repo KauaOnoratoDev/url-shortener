@@ -2,7 +2,7 @@ import { eq, sql } from 'drizzle-orm';
 import { ShortUrlRepository } from './ShortUrlRepository';
 import { shortUrlsTable as urls } from '../db/schemas/shortUrls';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { ShortUrlResponseDTO } from '../DTOs';
+import { ShortUrlResponseDTO, UpdateShortUrlDTO } from '../DTOs';
 
 export class DrizzleShortUrlRepository implements ShortUrlRepository {
     constructor(private db: NodePgDatabase) {}
@@ -69,5 +69,41 @@ export class DrizzleShortUrlRepository implements ShortUrlRepository {
             .where(eq(urls.userId, userId));
 
         return result;
+    }
+
+    async findById(id: number): Promise<ShortUrlResponseDTO | undefined> {
+        const result = await this.db
+            .select({
+                id: urls.id,
+                shortUrlCode: urls.shortUrlCode,
+                fullUrl: urls.fullUrl,
+                clicks: urls.clicks,
+                createdAt: urls.createdAt,
+                expiresAt: urls.expiresAt,
+            })
+            .from(urls)
+            .where(eq(urls.id, id))
+            .limit(1);
+
+        return result[0];
+    }
+
+    async update(
+        id: number,
+        data: UpdateShortUrlDTO
+    ): Promise<ShortUrlResponseDTO | undefined> {
+        await this.db
+            .update(urls)
+            .set({
+                fullUrl: data.fullUrl,
+                expiresAt: data.expiresAt,
+            })
+            .where(eq(urls.id, id));
+
+        return this.findById(id);
+    }
+
+    async delete(id: number) {
+        await this.db.delete(urls).where(eq(urls.id, id));
     }
 }

@@ -1,4 +1,4 @@
-import { ShortUrlResponseDTO } from '../DTOs';
+import { ShortUrlResponseDTO, UpdateShortUrlDTO } from '../DTOs';
 
 export interface ShortUrlRepository {
     create(fullUrl: string, userId: string): Promise<number>;
@@ -6,4 +6,10 @@ export interface ShortUrlRepository {
     getOriginalUrl(shortUrlCode: string): Promise<string | undefined>;
     addClick(shortUrlCode: string): Promise<void>;
     getUrlsByUserId(userId: string): Promise<ShortUrlResponseDTO[]>;
+    findById(id: number): Promise<ShortUrlResponseDTO | undefined>;
+    update(
+        id: number,
+        data: UpdateShortUrlDTO
+    ): Promise<ShortUrlResponseDTO | undefined>;
+    delete(id: number): Promise<void>;
 }
