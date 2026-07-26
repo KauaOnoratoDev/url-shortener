@@ -1,0 +1,64 @@
+import { Request, Response } from 'express';
+import { DeleteUrlController } from '../controllers/DeleteUrlController';
+import { DeleteUrlUseCase } from '../useCases/DeleteUrlUseCase';
+
+describe('DeleteUrlController', () => {
+    let deleteUrlUseCase: jest.Mocked<DeleteUrlUseCase>;
+    let controller: DeleteUrlController;
+
+    let req: Partial<Request>;
+    let res: Partial<Response>;
+
+    beforeEach(() => {
+        deleteUrlUseCase = {
+            execute: jest.fn(),
+        } as unknown as jest.Mocked<DeleteUrlUseCase>;
+
+        controller = new DeleteUrlController(deleteUrlUseCase);
+
+        res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+            send: jest.fn().mockReturnThis(),
+        };
+    });
+
+    it('should delete the url successfully', async () => {
+        req = {
+            params: {
+                id: '1',
+            },
+        };
+
+        deleteUrlUseCase.execute.mockResolvedValue(undefined);
+
+        await controller.handle(req as Request, res as Response);
+
+        expect(deleteUrlUseCase.execute).toHaveBeenCalledWith(1);
+        expect(res.status).toHaveBeenCalledWith(204);
+        expect(res.send).toHaveBeenCalled();
+    });
+
+    it('should return 500 when use case throws an error', async () => {
+        req = {
+            params: {
+                id: '1',
+            },
+        };
+
+        deleteUrlUseCase.execute.mockRejectedValue(new Error('Database error'));
+
+        const consoleSpy = jest
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+
+        await controller.handle(req as Request, res as Response);
+
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Internal server error',
+        });
+
+        consoleSpy.mockRestore();
+    });
+});
