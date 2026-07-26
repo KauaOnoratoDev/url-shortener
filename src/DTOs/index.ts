@@ -11,3 +11,8 @@ export interface ShortUrlResponseDTO {
     createdAt: Date;
     expiresAt: Date | null;
 }
+
+export interface UpdateShortUrlDTO {
+    fullUrl?: string;
+    expiresAt?: Date | null;
+}
