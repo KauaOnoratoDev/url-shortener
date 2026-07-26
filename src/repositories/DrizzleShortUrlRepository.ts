@@ -30,4 +30,18 @@ export class DrizzleShortUrlRepository implements ShortUrlRepository {
             })
             .where(eq(urls.id, urlId));
     }
+
+    async getOriginalUrl(shortUrlCode: string): Promise<string | undefined> {
+        const result = await this.db
+            .select({ fullUrl: urls.fullUrl })
+            .from(urls)
+            .where(eq(urls.shortUrlCode, shortUrlCode))
+            .limit(1);
+
+        if (result.length === 0) {
+            return undefined;
+        }
+
+        return result[0].fullUrl;
+    }
 }

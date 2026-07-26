@@ -5,6 +5,7 @@ jest.mock('../../src/db', () => ({
     db: {
         insert: jest.fn(),
         update: jest.fn(),
+        select: jest.fn(),
     },
 }));
 
@@ -12,9 +13,8 @@ describe('DrizzleShortUrlRepository', () => {
     let repository: DrizzleShortUrlRepository;
 
     beforeEach(() => {
-        repository = new DrizzleShortUrlRepository(db);
-
         jest.clearAllMocks();
+        repository = new DrizzleShortUrlRepository(db);
     });
 
     describe('create', () => {
@@ -77,6 +77,53 @@ describe('DrizzleShortUrlRepository', () => {
                 shortUrlCode: 'abc123',
             });
             expect(where).toHaveBeenCalled();
+        });
+    });
+
+    describe('getOriginalUrl', () => {
+        it('should return original url when short code exists', async () => {
+            const limit = jest.fn().mockResolvedValue([
+                {
+                    fullUrl: 'https://google.com',
+                },
+            ]);
+
+            const where = jest.fn().mockReturnValue({
+                limit,
+            });
+
+            const from = jest.fn().mockReturnValue({
+                where,
+            });
+
+            (db.select as jest.Mock).mockReturnValue({
+                from,
+            });
+
+            const result = await repository.getOriginalUrl('abc123');
+
+            expect(where).toHaveBeenCalled();
+            expect(result).toBe('https://google.com');
+        });
+
+        it('should return undefined when short code does not exist', async () => {
+            const limit = jest.fn().mockResolvedValue([]);
+
+            const where = jest.fn().mockReturnValue({
+                limit,
+            });
+
+            const from = jest.fn().mockReturnValue({
+                where,
+            });
+
+            (db.select as jest.Mock).mockReturnValue({
+                from,
+            });
+
+            const result = await repository.getOriginalUrl('invalid');
+
+            expect(result).toBeUndefined();
         });
     });
 });
