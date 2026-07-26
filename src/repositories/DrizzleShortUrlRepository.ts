@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { ShortUrlRepository } from './ShortUrlRepository';
 import { shortUrlsTable as urls } from '../db/schemas/shortUrls';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -43,5 +43,14 @@ export class DrizzleShortUrlRepository implements ShortUrlRepository {
         }
 
         return result[0].fullUrl;
+    }
+
+    async addClick(shortUrlCode: string): Promise<void> {
+        await this.db
+            .update(urls)
+            .set({
+                clicks: sql`${urls.clicks} + 1`,
+            })
+            .where(eq(urls.shortUrlCode, shortUrlCode));
     }
 }

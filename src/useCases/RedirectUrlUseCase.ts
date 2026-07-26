@@ -3,11 +3,15 @@ import { ShortUrlRepository } from '../repositories/ShortUrlRepository';
 export class RedirectUrlUseCase {
     constructor(private shortUrlRepository: ShortUrlRepository) {}
 
-    async redirect(shortUrlCode: string | string[]) {
-        const code = Array.isArray(shortUrlCode)
-            ? shortUrlCode[0]
-            : shortUrlCode;
+    async redirect(shortUrlCode: string) {
+        const url = await this.shortUrlRepository.getOriginalUrl(shortUrlCode);
 
-        return await this.shortUrlRepository.getOriginalUrl(code);
+        if (!url) {
+            return undefined;
+        }
+
+        await this.shortUrlRepository.addClick(shortUrlCode);
+
+        return url;
     }
 }

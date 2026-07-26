@@ -126,4 +126,24 @@ describe('DrizzleShortUrlRepository', () => {
             expect(result).toBeUndefined();
         });
     });
+
+    describe('addClick', () => {
+        it('should increment clicks for a short url', async () => {
+            const where = jest.fn().mockResolvedValue(undefined);
+
+            const set = jest.fn().mockReturnValue({
+                where,
+            });
+
+            (db.update as jest.Mock).mockReturnValue({
+                set,
+            });
+
+            await repository.addClick('abc123');
+
+            expect(db.update).toHaveBeenCalled();
+            expect(set).toHaveBeenCalled();
+            expect(where).toHaveBeenCalled();
+        });
+    });
 });

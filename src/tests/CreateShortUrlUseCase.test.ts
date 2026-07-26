@@ -13,6 +13,7 @@ describe('CreateShortUrlUseCase', () => {
             create: jest.fn(),
             updateShortUrlCode: jest.fn(),
             getOriginalUrl: jest.fn(),
+            addClick: jest.fn(),
         } as jest.Mocked<ShortUrlRepository>;
 
         hashProvider = {

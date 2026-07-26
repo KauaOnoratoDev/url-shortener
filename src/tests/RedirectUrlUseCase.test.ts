@@ -8,17 +8,21 @@ describe('RedirectUrlUseCase', () => {
     beforeEach(() => {
         repository = {
             getOriginalUrl: jest.fn(),
+            addClick: jest.fn(),
         } as unknown as jest.Mocked<ShortUrlRepository>;
 
         useCase = new RedirectUrlUseCase(repository);
     });
 
-    it('should return the original url', async () => {
+    it('should return the original url and increment clicks', async () => {
         repository.getOriginalUrl.mockResolvedValue('https://google.com');
+        repository.addClick.mockResolvedValue();
 
         const result = await useCase.redirect('abc123');
 
         expect(repository.getOriginalUrl).toHaveBeenCalledWith('abc123');
+
+        expect(repository.addClick).toHaveBeenCalledWith('abc123');
 
         expect(result).toBe('https://google.com');
     });
@@ -29,6 +33,8 @@ describe('RedirectUrlUseCase', () => {
         const result = await useCase.redirect('invalid-code');
 
         expect(repository.getOriginalUrl).toHaveBeenCalledWith('invalid-code');
+
+        expect(repository.addClick).not.toHaveBeenCalled();
 
         expect(result).toBeUndefined();
     });
