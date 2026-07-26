@@ -1,20 +1,20 @@
 import { Request, Response } from 'express';
 import { RedirectUrlController } from '../../src/controllers/RedirectUrlController';
-import { GetOriginalUrlUseCase } from '../../src/useCases/GetOriginalUrlUseCase';
+import { RedirectUrlUseCase } from '../useCases/RedirectUrlUseCase';
 
 describe('RedirectUrlController', () => {
-    let getOriginalUrlUseCase: jest.Mocked<GetOriginalUrlUseCase>;
+    let redirectUrlUseCase: jest.Mocked<RedirectUrlUseCase>;
     let controller: RedirectUrlController;
 
     let req: Partial<Request>;
     let res: Partial<Response>;
 
     beforeEach(() => {
-        getOriginalUrlUseCase = {
-            get: jest.fn(),
-        } as unknown as jest.Mocked<GetOriginalUrlUseCase>;
+        redirectUrlUseCase = {
+            redirect: jest.fn(),
+        } as unknown as jest.Mocked<RedirectUrlUseCase>;
 
-        controller = new RedirectUrlController(getOriginalUrlUseCase);
+        controller = new RedirectUrlController(redirectUrlUseCase);
 
         res = {
             status: jest.fn().mockReturnThis(),
@@ -30,11 +30,11 @@ describe('RedirectUrlController', () => {
             },
         };
 
-        getOriginalUrlUseCase.get.mockResolvedValue('https://google.com');
+        redirectUrlUseCase.redirect.mockResolvedValue('https://google.com');
 
         await controller.handle(req as Request, res as Response);
 
-        expect(getOriginalUrlUseCase.get).toHaveBeenCalledWith('abc123');
+        expect(redirectUrlUseCase.redirect).toHaveBeenCalledWith('abc123');
 
         expect(res.redirect).toHaveBeenCalledWith('https://google.com');
     });
@@ -46,11 +46,11 @@ describe('RedirectUrlController', () => {
             },
         };
 
-        getOriginalUrlUseCase.get.mockResolvedValue(undefined);
+        redirectUrlUseCase.redirect.mockResolvedValue(undefined);
 
         await controller.handle(req as Request, res as Response);
 
-        expect(getOriginalUrlUseCase.get).toHaveBeenCalledWith('invalid');
+        expect(redirectUrlUseCase.redirect).toHaveBeenCalledWith('invalid');
 
         expect(res.status).toHaveBeenCalledWith(404);
 
@@ -68,7 +68,7 @@ describe('RedirectUrlController', () => {
             },
         };
 
-        getOriginalUrlUseCase.get.mockRejectedValue(
+        redirectUrlUseCase.redirect.mockRejectedValue(
             new Error('Database error')
         );
 

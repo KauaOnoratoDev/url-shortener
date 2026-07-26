@@ -1,9 +1,9 @@
 import { ShortUrlRepository } from '../repositories/ShortUrlRepository';
 
-export class GetOriginalUrlUseCase {
+export class RedirectUrlUseCase {
     constructor(private shortUrlRepository: ShortUrlRepository) {}
 
-    async get(shortUrlCode: string | string[]) {
+    async redirect(shortUrlCode: string | string[]) {
         const code = Array.isArray(shortUrlCode)
             ? shortUrlCode[0]
             : shortUrlCode;

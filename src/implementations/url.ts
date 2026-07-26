@@ -4,7 +4,7 @@ import { db } from '../db';
 import { HashidsProvider } from '../providers/HashidsProvider';
 import { DrizzleShortUrlRepository } from '../repositories/DrizzleShortUrlRepository';
 import { CreateShortUrlUseCase } from '../useCases/CreateShortUrlUseCase';
-import { GetOriginalUrlUseCase } from '../useCases/GetOriginalUrlUseCase';
+import { RedirectUrlUseCase } from '../useCases/RedirectUrlUseCase';
 
 const shortUrlRepository = new DrizzleShortUrlRepository(db);
 const hashProvider = new HashidsProvider();
@@ -16,7 +16,7 @@ export const createShortUrlController = new CreateShortUrlController(
     createShortUrlUseCase
 );
 
-const getOriginalUrlUseCase = new GetOriginalUrlUseCase(shortUrlRepository);
+const redirectUrlUseCase = new RedirectUrlUseCase(shortUrlRepository);
 export const redirectUrlController = new RedirectUrlController(
-    getOriginalUrlUseCase
+    redirectUrlUseCase
 );

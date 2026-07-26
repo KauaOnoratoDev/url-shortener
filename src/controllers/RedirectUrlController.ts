@@ -1,13 +1,13 @@
 import { Request, Response } from 'express';
-import { GetOriginalUrlUseCase } from '../useCases/GetOriginalUrlUseCase';
+import { RedirectUrlUseCase } from '../useCases/RedirectUrlUseCase';
 
 export class RedirectUrlController {
-    constructor(private getOriginalUrlUseCase: GetOriginalUrlUseCase) {}
+    constructor(private redirecUrlUseCase: RedirectUrlUseCase) {}
 
     async handle(req: Request, res: Response) {
         const { shortUrlCode } = req.params;
 
-        const url = await this.getOriginalUrlUseCase.get(shortUrlCode);
+        const url = await this.redirecUrlUseCase.redirect(shortUrlCode);
 
         if (!url) {
             return res.status(404).json({ error: 'URL not found' });
