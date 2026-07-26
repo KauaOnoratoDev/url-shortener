@@ -2,6 +2,7 @@ import { eq, sql } from 'drizzle-orm';
 import { ShortUrlRepository } from './ShortUrlRepository';
 import { shortUrlsTable as urls } from '../db/schemas/shortUrls';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { ShortUrlResponseDTO } from '../DTOs';
 
 export class DrizzleShortUrlRepository implements ShortUrlRepository {
     constructor(private db: NodePgDatabase) {}
@@ -52,5 +53,21 @@ export class DrizzleShortUrlRepository implements ShortUrlRepository {
                 clicks: sql`${urls.clicks} + 1`,
             })
             .where(eq(urls.shortUrlCode, shortUrlCode));
+    }
+
+    async getUrlsByUserId(userId: string): Promise<ShortUrlResponseDTO[]> {
+        const result = await this.db
+            .select({
+                id: urls.id,
+                shortUrlCode: urls.shortUrlCode,
+                fullUrl: urls.fullUrl,
+                clicks: urls.clicks,
+                createdAt: urls.createdAt,
+                expiresAt: urls.expiresAt,
+            })
+            .from(urls)
+            .where(eq(urls.userId, userId));
+
+        return result;
     }
 }

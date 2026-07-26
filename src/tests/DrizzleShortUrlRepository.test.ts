@@ -146,4 +146,71 @@ describe('DrizzleShortUrlRepository', () => {
             expect(where).toHaveBeenCalled();
         });
     });
+
+    describe('DrizzleShortUrlRepository - getUrlsByUserId', () => {
+        it('should return urls from user', async () => {
+            const urls = [
+                {
+                    id: 1,
+                    shortUrlCode: 'abc123',
+                    fullUrl: 'https://google.com',
+                    clicks: 10,
+                    createdAt: new Date(),
+                    expiresAt: null,
+                },
+            ];
+
+            const where = jest.fn().mockResolvedValue(urls);
+
+            const from = jest.fn().mockReturnValue({
+                where,
+            });
+
+            (db.select as jest.Mock).mockReturnValue({
+                from,
+            });
+
+            const result = await repository.getUrlsByUserId('user-1');
+
+            expect(db.select).toHaveBeenCalled();
+
+            expect(where).toHaveBeenCalled();
+
+            expect(result).toEqual(urls);
+        });
+
+        it('should return empty array when user has no urls', async () => {
+            const where = jest.fn().mockResolvedValue([]);
+
+            const from = jest.fn().mockReturnValue({
+                where,
+            });
+
+            (db.select as jest.Mock).mockReturnValue({
+                from,
+            });
+
+            const result = await repository.getUrlsByUserId('user-1');
+
+            expect(result).toEqual([]);
+        });
+
+        it('should throw when database fails', async () => {
+            const where = jest
+                .fn()
+                .mockRejectedValue(new Error('Database error'));
+
+            const from = jest.fn().mockReturnValue({
+                where,
+            });
+
+            (db.select as jest.Mock).mockReturnValue({
+                from,
+            });
+
+            await expect(repository.getUrlsByUserId('user-1')).rejects.toThrow(
+                'Database error'
+            );
+        });
+    });
 });
