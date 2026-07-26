@@ -12,7 +12,7 @@ export class CreateShortUrlUseCase {
         const urlId = await this.shortUrlRepository.create(fullUrl, userId);
         const shortUrlCode = this.generateShortUrl(urlId);
 
-        this.shortUrlRepository.updateShortUrlCode(urlId, shortUrlCode);
+        await this.shortUrlRepository.updateShortUrlCode(urlId, shortUrlCode);
 
         return shortUrlCode;
     }
