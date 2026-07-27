@@ -8,7 +8,7 @@ type Params = {
 export class RedirectUrlController {
     constructor(private redirecUrlUseCase: RedirectUrlUseCase) {}
 
-    async handle(req: Request, res: Response) {
+    async handle(req: Request, res: Response): Promise<void> {
         const { shortUrlCode } = req.params as Params;
         const url = await this.redirecUrlUseCase.redirect(shortUrlCode);
 

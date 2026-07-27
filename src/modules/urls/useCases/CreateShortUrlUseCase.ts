@@ -10,7 +10,7 @@ export class CreateShortUrlUseCase {
         private validateUrlProvider: ValidateUrlProvider
     ) {}
 
-    async execute({ fullUrl, userId }: createShortUrlDTO) {
+    async execute({ fullUrl, userId }: createShortUrlDTO): Promise<string> {
         this.validateUrlProvider.validate(fullUrl);
 
         const urlId = await this.shortUrlRepository.create(fullUrl, userId);
@@ -21,7 +21,7 @@ export class CreateShortUrlUseCase {
         return shortUrlCode;
     }
 
-    private generateShortUrl(urlId: number) {
+    private generateShortUrl(urlId: number): string {
         return this.hashProvider.encode(urlId);
     }
 }

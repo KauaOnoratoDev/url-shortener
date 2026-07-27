@@ -4,7 +4,7 @@ import { UrlNotFoundError } from '@shared/errors/UrlNotFoundError';
 export class RedirectUrlUseCase {
     constructor(private shortUrlRepository: ShortUrlRepository) {}
 
-    async redirect(shortUrlCode: string) {
+    async redirect(shortUrlCode: string): Promise<string> {
         const url = await this.shortUrlRepository.getOriginalUrl(shortUrlCode);
 
         if (!url) {

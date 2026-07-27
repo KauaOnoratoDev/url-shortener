@@ -1,11 +1,14 @@
-import { UpdateShortUrlDTO } from '@modules/urls/DTOs';
+import { ShortUrlResponseDTO, UpdateShortUrlDTO } from '@modules/urls/DTOs';
 import { ShortUrlRepository } from '@modules/urls/repositories/ShortUrlRepository';
 import { UrlNotFoundError } from '@shared/errors/UrlNotFoundError';
 
 export class UpdateUrlUseCase {
     constructor(private shortUrlRepository: ShortUrlRepository) {}
 
-    async execute(id: number, { fullUrl, expiresAt }: UpdateShortUrlDTO) {
+    async execute(
+        id: number,
+        { fullUrl, expiresAt }: UpdateShortUrlDTO
+    ): Promise<ShortUrlResponseDTO | undefined> {
         const url = await this.shortUrlRepository.findById(id);
 
         if (!url) {
@@ -20,6 +23,6 @@ export class UpdateUrlUseCase {
             url.expiresAt = expiresAt;
         }
 
-        return this.shortUrlRepository.update(id, url);
+        return await this.shortUrlRepository.update(id, url);
     }
 }

@@ -1,10 +1,11 @@
 import { ShortUrlRepository } from '@modules/urls/repositories/ShortUrlRepository';
 import { UrlNotFoundError } from '@shared/errors/UrlNotFoundError';
+import { ShortUrlResponseDTO } from '@modules/urls/DTOs';
 
 export class GetUrlUseCase {
     constructor(private shortUrlRepository: ShortUrlRepository) {}
 
-    async execute(id: number) {
+    async execute(id: number): Promise<ShortUrlResponseDTO> {
         const url = await this.shortUrlRepository.findById(id);
 
         if (!url) {

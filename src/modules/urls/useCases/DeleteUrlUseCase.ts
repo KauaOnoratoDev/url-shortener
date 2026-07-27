@@ -4,7 +4,7 @@ import { UrlNotFoundError } from '@shared/errors/UrlNotFoundError';
 export class DeleteUrlUseCase {
     constructor(private shortUrlRepository: ShortUrlRepository) {}
 
-    async execute(id: number) {
+    async execute(id: number): Promise<void> {
         const url = await this.shortUrlRepository.findById(id);
 
         if (!url) {
