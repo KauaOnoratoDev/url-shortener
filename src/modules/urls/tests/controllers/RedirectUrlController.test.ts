@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { RedirectUrlController } from '@modules/urls/controllers/RedirectUrlController';
 import { RedirectUrlUseCase } from '@modules/urls/useCases/RedirectUrlUseCase';
+import { UrlNotFoundError } from '@shared/errors/UrlNotFoundError';
+import { errorHandler } from '@shared/middlewares/errorHandler';
 
 describe('RedirectUrlController', () => {
     let redirectUrlUseCase: jest.Mocked<RedirectUrlUseCase>;
@@ -39,26 +41,25 @@ describe('RedirectUrlController', () => {
         expect(res.redirect).toHaveBeenCalledWith('https://google.com');
     });
 
-    it('should return 404 when short url does not exist', async () => {
-        req = {
-            params: {
-                shortUrlCode: 'invalid',
-            },
-        };
+    it('should return 404 when url was not found', () => {
+        const error = new UrlNotFoundError();
 
-        redirectUrlUseCase.redirect.mockResolvedValue(undefined);
+        const req = {} as Request;
 
-        await controller.handle(req as Request, res as Response);
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn(),
+        } as unknown as Response;
 
-        expect(redirectUrlUseCase.redirect).toHaveBeenCalledWith('invalid');
+        const next = jest.fn();
+
+        errorHandler(error, req, res, next);
 
         expect(res.status).toHaveBeenCalledWith(404);
 
         expect(res.json).toHaveBeenCalledWith({
-            error: 'URL not found',
+            message: 'URL não encontrada',
         });
-
-        expect(res.redirect).not.toHaveBeenCalled();
     });
 
     it('should throw when use case fails', async () => {

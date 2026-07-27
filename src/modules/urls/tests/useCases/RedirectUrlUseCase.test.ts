@@ -27,16 +27,16 @@ describe('RedirectUrlUseCase', () => {
         expect(result).toBe('https://google.com');
     });
 
-    it('should return undefined when url does not exist', async () => {
+    it('should throw when url does not exist', async () => {
         repository.getOriginalUrl.mockResolvedValue(undefined);
 
-        const result = await useCase.redirect('invalid-code');
+        await expect(useCase.redirect('invalid-code')).rejects.toThrow(
+            'URL não encontrada'
+        );
 
         expect(repository.getOriginalUrl).toHaveBeenCalledWith('invalid-code');
 
         expect(repository.addClick).not.toHaveBeenCalled();
-
-        expect(result).toBeUndefined();
     });
 
     it('should throw when repository fails', async () => {

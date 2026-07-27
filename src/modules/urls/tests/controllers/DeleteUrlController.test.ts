@@ -39,7 +39,7 @@ describe('DeleteUrlController', () => {
         expect(res.send).toHaveBeenCalled();
     });
 
-    it('should return 500 when use case throws an error', async () => {
+    it('should propagate errors from use case', async () => {
         req = {
             params: {
                 id: '1',
@@ -48,17 +48,10 @@ describe('DeleteUrlController', () => {
 
         deleteUrlUseCase.execute.mockRejectedValue(new Error('Database error'));
 
-        const consoleSpy = jest
-            .spyOn(console, 'error')
-            .mockImplementation(() => {});
+        await expect(
+            controller.handle(req as Request, res as Response)
+        ).rejects.toThrow('Database error');
 
-        await controller.handle(req as Request, res as Response);
-
-        expect(res.status).toHaveBeenCalledWith(500);
-        expect(res.json).toHaveBeenCalledWith({
-            error: 'Internal server error',
-        });
-
-        consoleSpy.mockRestore();
+        expect(deleteUrlUseCase.execute).toHaveBeenCalledWith(1);
     });
 });

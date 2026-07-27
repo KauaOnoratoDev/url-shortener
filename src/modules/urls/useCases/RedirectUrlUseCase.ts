@@ -1,4 +1,5 @@
 import { ShortUrlRepository } from '@modules/urls/repositories/ShortUrlRepository';
+import { UrlNotFoundError } from '@shared/errors/UrlNotFoundError';
 
 export class RedirectUrlUseCase {
     constructor(private shortUrlRepository: ShortUrlRepository) {}
@@ -7,7 +8,7 @@ export class RedirectUrlUseCase {
         const url = await this.shortUrlRepository.getOriginalUrl(shortUrlCode);
 
         if (!url) {
-            return undefined;
+            throw new UrlNotFoundError();
         }
 
         await this.shortUrlRepository.addClick(shortUrlCode);

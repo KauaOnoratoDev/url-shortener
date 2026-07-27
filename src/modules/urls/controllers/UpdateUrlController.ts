@@ -7,21 +7,11 @@ export class UpdateUrlController {
     async handle(req: Request, res: Response): Promise<Response> {
         const { id } = req.params;
         const { fullUrl, expiresAt } = req.body;
+        const updatedUrl = await this.updateUrlUseCase.execute(Number(id), {
+            fullUrl,
+            expiresAt,
+        });
 
-        try {
-            const updatedUrl = await this.updateUrlUseCase.execute(Number(id), {
-                fullUrl,
-                expiresAt,
-            });
-
-            if (!updatedUrl) {
-                return res.status(404).json({ error: 'URL not found' });
-            }
-
-            return res.status(200).json(updatedUrl);
-        } catch (error) {
-            console.error(error);
-            return res.status(500).json({ error: 'Internal server error' });
-        }
+        return res.status(200).json(updatedUrl);
     }
 }

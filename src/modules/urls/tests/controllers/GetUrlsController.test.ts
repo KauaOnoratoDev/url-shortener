@@ -67,7 +67,7 @@ describe('GetUrlsController', () => {
         expect(res.json).toHaveBeenCalledWith(urls);
     });
 
-    it('should return 500 when use case throws an error', async () => {
+    it('should propagate errors from use case', async () => {
         req = {
             query: {
                 userId: 'user-1',
@@ -76,18 +76,10 @@ describe('GetUrlsController', () => {
 
         getUrlsUseCase.execute.mockRejectedValue(new Error('Database error'));
 
-        const consoleSpy = jest
-            .spyOn(console, 'error')
-            .mockImplementation(() => {});
+        await expect(
+            controller.handle(req as Request, res as Response)
+        ).rejects.toThrow('Database error');
 
-        await controller.handle(req as Request, res as Response);
-
-        expect(res.status).toHaveBeenCalledWith(500);
-
-        expect(res.json).toHaveBeenCalledWith({
-            error: 'Internal server error',
-        });
-
-        consoleSpy.mockRestore();
+        expect(getUrlsUseCase.execute).toHaveBeenCalledWith('user-1');
     });
 });

@@ -15,15 +15,10 @@ export class CreateShortUrlController {
             return res.status(400).json({ error: 'User ID is required' });
         }
 
-        try {
-            const shortUrlCode = await this.createShortUrlUseCase.execute({
-                fullUrl,
-                userId,
-            });
-            return res.status(201).json({ shortUrlCode });
-        } catch (error) {
-            console.error(error);
-            return res.status(500).json({ error: 'Internal server error' });
-        }
+        const shortUrlCode = await this.createShortUrlUseCase.execute({
+            fullUrl,
+            userId,
+        });
+        return res.status(201).json({ shortUrlCode });
     }
 }

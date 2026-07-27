@@ -79,7 +79,7 @@ describe('CreateShortUrlController', () => {
         });
     });
 
-    it('should return 500 when use case throws an error', async () => {
+    it('should propagate unexpected errors from use case', async () => {
         req = {
             body: {
                 fullUrl: 'https://google.com',
@@ -91,19 +91,10 @@ describe('CreateShortUrlController', () => {
             new Error('Unexpected error')
         );
 
-        const consoleSpy = jest
-            .spyOn(console, 'error')
-            .mockImplementation(() => {});
-
-        await controller.handle(req as Request, res as Response);
+        await expect(
+            controller.handle(req as Request, res as Response)
+        ).rejects.toThrow('Unexpected error');
 
         expect(createShortUrlUseCase.execute).toHaveBeenCalled();
-
-        expect(res.status).toHaveBeenCalledWith(500);
-        expect(res.json).toHaveBeenCalledWith({
-            error: 'Internal server error',
-        });
-
-        consoleSpy.mockRestore();
     });
 });

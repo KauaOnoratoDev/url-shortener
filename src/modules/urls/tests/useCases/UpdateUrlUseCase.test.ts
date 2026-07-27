@@ -76,16 +76,17 @@ describe('UpdateUrlUseCase', () => {
         });
     });
 
-    it('should return undefined when url does not exist', async () => {
+    it('should throw when url does not exist', async () => {
         repository.findById.mockResolvedValue(undefined);
 
-        const result = await useCase.execute(1, {
-            fullUrl: 'https://google.com',
-            expiresAt: null,
-        });
+        await expect(
+            useCase.execute(1, {
+                fullUrl: 'https://google.com',
+                expiresAt: null,
+            })
+        ).rejects.toThrow('URL não encontrada');
 
         expect(repository.update).not.toHaveBeenCalled();
-        expect(result).toBeUndefined();
     });
 
     it('should throw when findById fails', async () => {

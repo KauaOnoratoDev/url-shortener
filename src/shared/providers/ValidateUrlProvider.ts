@@ -1,3 +1,4 @@
+import { InvalidUrlError } from '@shared/errors/InvalidUrlError';
 import { z } from 'zod';
 
 export class ValidateUrlProvider {
@@ -21,7 +22,7 @@ export class ValidateUrlProvider {
         const result = this.urlSchema.safeParse(url);
 
         if (!result.success) {
-            throw new Error(result.error.message);
+            throw new InvalidUrlError(result.error.issues[0].message);
         }
     }
 }

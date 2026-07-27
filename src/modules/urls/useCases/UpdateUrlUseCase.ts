@@ -1,5 +1,6 @@
 import { UpdateShortUrlDTO } from '@modules/urls/DTOs';
 import { ShortUrlRepository } from '@modules/urls/repositories/ShortUrlRepository';
+import { UrlNotFoundError } from '@shared/errors/UrlNotFoundError';
 
 export class UpdateUrlUseCase {
     constructor(private shortUrlRepository: ShortUrlRepository) {}
@@ -8,7 +9,7 @@ export class UpdateUrlUseCase {
         const url = await this.shortUrlRepository.findById(id);
 
         if (!url) {
-            return undefined;
+            throw new UrlNotFoundError();
         }
 
         if (fullUrl) {
