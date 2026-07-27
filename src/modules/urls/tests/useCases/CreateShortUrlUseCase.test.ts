@@ -1,10 +1,12 @@
 import { CreateShortUrlUseCase } from '@modules/urls/useCases/CreateShortUrlUseCase';
 import { ShortUrlRepository } from '@modules/urls/repositories/ShortUrlRepository';
 import { HashidsProvider } from '@providers/HashidsProvider';
+import { ValidateUrlProvider } from '@shared/providers/ValidateUrlProvider';
 
 describe('CreateShortUrlUseCase', () => {
     let repository: jest.Mocked<ShortUrlRepository>;
     let hashProvider: jest.Mocked<HashidsProvider>;
+    let validateUrlProvider: jest.Mocked<ValidateUrlProvider>;
 
     let useCase: CreateShortUrlUseCase;
 
@@ -21,7 +23,15 @@ describe('CreateShortUrlUseCase', () => {
             encode: jest.fn(),
         } as jest.Mocked<HashidsProvider>;
 
-        useCase = new CreateShortUrlUseCase(repository, hashProvider);
+        validateUrlProvider = {
+            validate: jest.fn(),
+        } as unknown as jest.Mocked<ValidateUrlProvider>;
+
+        useCase = new CreateShortUrlUseCase(
+            repository,
+            hashProvider,
+            validateUrlProvider
+        );
     });
 
     it('should create a short url successfully', async () => {
@@ -92,5 +102,22 @@ describe('CreateShortUrlUseCase', () => {
                 userId: 'user-1',
             })
         ).rejects.toThrow('Update error');
+    });
+
+    it('should throw if url is invalid', async () => {
+        validateUrlProvider.validate.mockImplementation(() => {
+            throw new Error('URL inválida');
+        });
+
+        await expect(
+            useCase.execute({
+                fullUrl: 'invalid-url',
+                userId: 'user-1',
+            })
+        ).rejects.toThrow('URL inválida');
+
+        expect(repository.create).not.toHaveBeenCalled();
+        expect(hashProvider.encode).not.toHaveBeenCalled();
+        expect(repository.updateShortUrlCode).not.toHaveBeenCalled();
     });
 });
