@@ -7,7 +7,7 @@ export class UpdateUrlController {
     async handle(req: Request, res: Response): Promise<Response> {
         const { id } = req.params;
         const userId = req.user?.userId;
-        const { fullUrl, expiresAt } = req.body;
+        const { fullUrl } = req.body;
         if (!userId) {
             return res
                 .status(401)
@@ -17,10 +17,7 @@ export class UpdateUrlController {
         const updatedUrl = await this.updateUrlUseCase.execute(
             Number(id),
             userId,
-            {
-                fullUrl,
-                expiresAt,
-            }
+            { fullUrl }
         );
 
         return res.status(200).json(updatedUrl);

@@ -30,7 +30,7 @@ describe('UpdateUrlController', () => {
             },
             body: {
                 fullUrl: 'https://github.com',
-                expiresAt: null,
+                expiresAt: new Date('2030-01-01'),
             },
             user: { userId: 'user-1', tokenType: 'access' },
         };
@@ -50,7 +50,6 @@ describe('UpdateUrlController', () => {
 
         expect(updateUrlUseCase.execute).toHaveBeenCalledWith(1, 'user-1', {
             fullUrl: 'https://github.com',
-            expiresAt: null,
         });
 
         expect(res.status).toHaveBeenCalledWith(200);
@@ -64,7 +63,7 @@ describe('UpdateUrlController', () => {
             },
             body: {
                 fullUrl: 'https://github.com',
-                expiresAt: null,
+                expiresAt: new Date('2030-01-01'),
             },
             user: { userId: 'user-1', tokenType: 'access' },
         };
@@ -77,7 +76,6 @@ describe('UpdateUrlController', () => {
 
         expect(updateUrlUseCase.execute).toHaveBeenCalledWith(1, 'user-1', {
             fullUrl: 'https://github.com',
-            expiresAt: null,
         });
     });
 });

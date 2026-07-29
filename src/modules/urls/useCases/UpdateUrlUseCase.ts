@@ -8,7 +8,7 @@ export class UpdateUrlUseCase {
     async execute(
         id: number,
         userId: string,
-        { fullUrl, expiresAt }: UpdateShortUrlDTO
+        { fullUrl }: UpdateShortUrlDTO
     ): Promise<ShortUrlResponseDTO | undefined> {
         const url = await this.shortUrlRepository.findById(id, userId);
 
@@ -20,10 +20,8 @@ export class UpdateUrlUseCase {
             url.fullUrl = fullUrl;
         }
 
-        if (expiresAt) {
-            url.expiresAt = expiresAt;
-        }
-
-        return await this.shortUrlRepository.update(id, userId, url);
+        return await this.shortUrlRepository.update(id, userId, {
+            fullUrl: url.fullUrl,
+        });
     }
 }

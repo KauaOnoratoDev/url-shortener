@@ -33,47 +33,16 @@ describe('UpdateUrlUseCase', () => {
         repository.update.mockResolvedValue(updatedUrl);
 
         const result = await useCase.execute(1, 'user-1', {
-            ...url,
             fullUrl: 'https://github.com',
         });
 
         expect(repository.findById).toHaveBeenCalledWith(1, 'user-1');
 
         expect(repository.update).toHaveBeenCalledWith(1, 'user-1', {
-            ...url,
             fullUrl: 'https://github.com',
         });
 
         expect(result).toEqual(updatedUrl);
-    });
-
-    it('should update expiresAt successfully', async () => {
-        const url = {
-            id: 1,
-            shortUrlCode: 'abc123',
-            fullUrl: 'https://google.com',
-            clicks: 10,
-            createdAt: new Date(),
-            expiresAt: null,
-        };
-
-        const expiresAt = new Date();
-
-        repository.findById.mockResolvedValue(url);
-        repository.update.mockResolvedValue({
-            ...url,
-            expiresAt,
-        });
-
-        await useCase.execute(1, 'user-1', {
-            ...url,
-            expiresAt,
-        });
-
-        expect(repository.update).toHaveBeenCalledWith(1, 'user-1', {
-            ...url,
-            expiresAt,
-        });
     });
 
     it('should throw when url does not exist', async () => {
@@ -82,7 +51,6 @@ describe('UpdateUrlUseCase', () => {
         await expect(
             useCase.execute(1, 'user-1', {
                 fullUrl: 'https://google.com',
-                expiresAt: null,
             })
         ).rejects.toThrow('URL não encontrada');
 
@@ -95,7 +63,6 @@ describe('UpdateUrlUseCase', () => {
         await expect(
             useCase.execute(1, 'user-1', {
                 fullUrl: 'https://google.com',
-                expiresAt: null,
             })
         ).rejects.toThrow('Database error');
     });
@@ -114,8 +81,8 @@ describe('UpdateUrlUseCase', () => {
 
         repository.update.mockRejectedValue(new Error('Database error'));
 
-        await expect(useCase.execute(1, 'user-1', url)).rejects.toThrow(
-            'Database error'
-        );
+        await expect(
+            useCase.execute(1, 'user-1', { fullUrl: url.fullUrl })
+        ).rejects.toThrow('Database error');
     });
 });

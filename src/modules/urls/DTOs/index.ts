@@ -15,5 +15,4 @@ export interface ShortUrlResponseDTO {
 
 export interface UpdateShortUrlDTO {
     fullUrl?: string;
-    expiresAt?: Date | null;
 }

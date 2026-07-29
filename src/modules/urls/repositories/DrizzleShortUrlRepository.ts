@@ -128,18 +128,9 @@ export class DrizzleShortUrlRepository implements ShortUrlRepository {
         userId: string,
         data: UpdateShortUrlDTO
     ): Promise<ShortUrlResponseDTO | undefined> {
-        const updateData = {
-            fullUrl: data.fullUrl,
-            expiresAt: data.expiresAt,
-            ...(data.expiresAt !== undefined && {
-                expired:
-                    data.expiresAt !== null && data.expiresAt <= new Date(),
-            }),
-        };
-
         await this.db
             .update(urls)
-            .set(updateData)
+            .set({ fullUrl: data.fullUrl })
             .where(and(eq(urls.id, id), eq(urls.userId, userId)));
 
         return this.findById(id, userId);

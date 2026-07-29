@@ -307,13 +307,13 @@ describe('DrizzleShortUrlRepository', () => {
 
             jest.spyOn(repository, 'findById').mockResolvedValue(updatedUrl);
 
-            const result = await repository.update(1, 'user-1', updatedUrl);
+            const result = await repository.update(1, 'user-1', {
+                fullUrl: updatedUrl.fullUrl,
+            });
 
             expect(db.update).toHaveBeenCalled();
             expect(set).toHaveBeenCalledWith({
                 fullUrl: updatedUrl.fullUrl,
-                expiresAt: updatedUrl.expiresAt,
-                expired: false,
             });
 
             expect(repository.findById).toHaveBeenCalledWith(1, 'user-1');
