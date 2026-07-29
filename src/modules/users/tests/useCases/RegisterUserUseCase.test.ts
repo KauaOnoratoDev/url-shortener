@@ -57,6 +57,7 @@ describe('RegisterUserUseCase', () => {
             name: data.name,
             email: data.email,
             passwordHash: 'ValidHash1!',
+            plan: 'free',
         });
         expect(result).toEqual(user);
     });

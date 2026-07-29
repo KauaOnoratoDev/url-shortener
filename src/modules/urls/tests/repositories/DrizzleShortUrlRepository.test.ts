@@ -29,10 +29,10 @@ describe('DrizzleShortUrlRepository', () => {
                 values,
             });
 
-            const result = await repository.create(
-                'https://google.com',
-                'user-1'
-            );
+            const result = await repository.create({
+                fullUrl: 'https://google.com',
+                userId: 'user-1',
+            });
 
             expect(db.insert).toHaveBeenCalled();
             expect(values).toHaveBeenCalledWith({
@@ -55,7 +55,10 @@ describe('DrizzleShortUrlRepository', () => {
             });
 
             await expect(
-                repository.create('https://google.com', 'user-1')
+                repository.create({
+                    fullUrl: 'https://google.com',
+                    userId: 'user-1',
+                })
             ).rejects.toThrow('Could not create short URL.');
         });
     });
@@ -81,13 +84,18 @@ describe('DrizzleShortUrlRepository', () => {
         });
     });
 
-    describe('getOriginalUrl', () => {
+    describe('getForRedirect', () => {
         it('should return original url when short code exists', async () => {
             const limit = jest.fn().mockResolvedValue([
                 {
                     fullUrl: 'https://google.com',
+                    expired: false,
                 },
             ]);
+
+            const updateWhere = jest.fn().mockResolvedValue(undefined);
+            const updateSet = jest.fn().mockReturnValue({ where: updateWhere });
+            (db.update as jest.Mock).mockReturnValue({ set: updateSet });
 
             const where = jest.fn().mockReturnValue({
                 limit,
@@ -101,15 +109,22 @@ describe('DrizzleShortUrlRepository', () => {
                 from,
             });
 
-            const result = await repository.getOriginalUrl('abc123');
+            const result = await repository.getForRedirect('abc123');
 
             expect(where).toHaveBeenCalled();
-            expect(result).toBe('https://google.com');
+            expect(result).toEqual({
+                fullUrl: 'https://google.com',
+                expired: false,
+            });
         });
 
         it('should return undefined when short code does not exist', async () => {
             const limit = jest.fn().mockResolvedValue([]);
 
+            const updateWhere = jest.fn().mockResolvedValue(undefined);
+            const updateSet = jest.fn().mockReturnValue({ where: updateWhere });
+            (db.update as jest.Mock).mockReturnValue({ set: updateSet });
+
             const where = jest.fn().mockReturnValue({
                 limit,
             });
@@ -122,7 +137,7 @@ describe('DrizzleShortUrlRepository', () => {
                 from,
             });
 
-            const result = await repository.getOriginalUrl('invalid');
+            const result = await repository.getForRedirect('invalid');
 
             expect(result).toBeUndefined();
         });
@@ -298,6 +313,7 @@ describe('DrizzleShortUrlRepository', () => {
             expect(set).toHaveBeenCalledWith({
                 fullUrl: updatedUrl.fullUrl,
                 expiresAt: updatedUrl.expiresAt,
+                expired: false,
             });
 
             expect(repository.findById).toHaveBeenCalledWith(1, 'user-1');

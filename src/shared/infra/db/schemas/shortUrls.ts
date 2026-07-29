@@ -1,4 +1,10 @@
-import { integer, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import {
+    boolean,
+    integer,
+    pgTable,
+    text,
+    timestamp,
+} from 'drizzle-orm/pg-core';
 
 import { usersTable } from './users';
 
@@ -27,4 +33,6 @@ export const shortUrlsTable = pgTable('short_urls', {
     expiresAt: timestamp({
         withTimezone: true,
     }),
+
+    expired: boolean().default(false).notNull(),
 });

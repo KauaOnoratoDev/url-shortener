@@ -1,4 +1,5 @@
 import { pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import { userPlanEnum } from './enums/userPlanEnum';
 
 export const usersTable = pgTable('users', {
     id: text().primaryKey().notNull(),
@@ -8,6 +9,8 @@ export const usersTable = pgTable('users', {
     email: text().notNull().unique(),
 
     passwordHash: text().notNull(),
+
+    plan: userPlanEnum('plan').default('free').notNull(),
 
     createdAt: timestamp({
         withTimezone: true,

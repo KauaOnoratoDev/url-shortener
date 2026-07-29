@@ -14,6 +14,7 @@ describe('CreateShortUrlUseCase', () => {
         repository = {
             create: jest.fn(),
             updateShortUrlCode: jest.fn(),
+            updateShortUrlExpiresAt: jest.fn(),
             getOriginalUrl: jest.fn(),
             addClick: jest.fn(),
             getUrlsByUserId: jest.fn(),
@@ -44,10 +45,10 @@ describe('CreateShortUrlUseCase', () => {
             userId: 'user-1',
         });
 
-        expect(repository.create).toHaveBeenCalledWith(
-            'https://google.com',
-            'user-1'
-        );
+        expect(repository.create).toHaveBeenCalledWith({
+            fullUrl: 'https://google.com',
+            userId: 'user-1',
+        });
 
         expect(hashProvider.encode).toHaveBeenCalledWith(100);
 

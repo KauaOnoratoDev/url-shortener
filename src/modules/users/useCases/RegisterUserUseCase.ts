@@ -6,6 +6,7 @@ import { HashProvider } from '@shared/providers/HashProvider';
 import { Name } from '../models/Name';
 import { Email } from '../models/Email';
 import { Password } from '../models/Password';
+import { Plan } from '../models/Plan';
 
 export class RegisterUserUseCase {
     constructor(
@@ -18,9 +19,11 @@ export class RegisterUserUseCase {
         name,
         email,
         password,
+        plan,
     }: CreateUserDTO): Promise<UserResponseDTO> {
         const validatedName = Name.create(name).value;
         const validatedEmail = Email.create(email).value;
+        const validatedPlan = Plan.create(plan ?? 'free').value;
 
         const userAlreadyExists =
             await this.usersRepository.findByEmail(validatedEmail);
@@ -39,6 +42,7 @@ export class RegisterUserUseCase {
             name: validatedName,
             email: validatedEmail,
             passwordHash,
+            plan: validatedPlan,
         });
     }
 }

@@ -4,6 +4,7 @@ import { CreateShortUrlController } from '@modules/urls/controllers/CreateShortU
 import { DrizzleShortUrlRepository } from '@modules/urls/repositories/DrizzleShortUrlRepository';
 import { CreateShortUrlUseCase } from '@modules/urls/useCases/CreateShortUrlUseCase';
 import { ValidateUrlProvider } from '@shared/providers/ValidateUrlProvider';
+import { DrizzleUsersRepository } from '@modules/users/repositories/DrizzleUsersRepository';
 
 export function makeCreateShortUrlController(): CreateShortUrlController {
     const shortUrlRepository = new DrizzleShortUrlRepository(db);
@@ -12,7 +13,8 @@ export function makeCreateShortUrlController(): CreateShortUrlController {
     const createShortUrlUseCase = new CreateShortUrlUseCase(
         shortUrlRepository,
         hashProvider,
-        validateUrlProvider
+        validateUrlProvider,
+        new DrizzleUsersRepository()
     );
 
     return new CreateShortUrlController(createShortUrlUseCase);

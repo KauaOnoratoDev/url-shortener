@@ -10,6 +10,7 @@ export interface ShortUrlResponseDTO {
     clicks: number;
     createdAt: Date;
     expiresAt: Date | null;
+    expired?: boolean;
 }
 
 export interface UpdateShortUrlDTO {

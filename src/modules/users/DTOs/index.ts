@@ -2,6 +2,7 @@ export type CreateUserDTO = {
     name: string;
     email: string;
     password: string;
+    plan?: string;
 };
 
 export type CreateUserRepositoryDTO = {
@@ -9,6 +10,7 @@ export type CreateUserRepositoryDTO = {
     name: string;
     email: string;
     passwordHash: string;
+    plan?: PlanValue;
 };
 
 export type UserResponseDTO = {
@@ -17,6 +19,7 @@ export type UserResponseDTO = {
     email: string;
     created_at: Date;
     updated_at: Date;
+    plan?: PlanValue;
 };
 
 export type LoginUserDTO = {
@@ -37,3 +40,4 @@ export type LoginUserResponseDTO = {
 export type RefreshUserDTO = {
     refreshToken: string;
 };
+import { PlanValue } from '../models/Plan';

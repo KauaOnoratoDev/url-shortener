@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { RedirectUrlController } from '@modules/urls/controllers/RedirectUrlController';
 import { RedirectUrlUseCase } from '@modules/urls/useCases/RedirectUrlUseCase';
 import { UrlNotFoundError } from '@shared/errors/UrlNotFoundError';
+import { ExpiredUrlError } from '@shared/errors/ExpiredUrlError';
 import { errorHandler } from '@shared/middlewares/errorHandler';
 
 describe('RedirectUrlController', () => {
@@ -60,6 +61,21 @@ describe('RedirectUrlController', () => {
         expect(res.json).toHaveBeenCalledWith({
             message: 'URL não encontrada',
         });
+    });
+
+    it('should return 410 when url was expired', () => {
+        const error = new ExpiredUrlError();
+
+        const req = {} as Request;
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn(),
+        } as unknown as Response;
+
+        errorHandler(error, req, res, jest.fn());
+
+        expect(res.status).toHaveBeenCalledWith(410);
+        expect(res.json).toHaveBeenCalledWith({ message: 'URL expirada' });
     });
 
     it('should throw when use case fails', async () => {

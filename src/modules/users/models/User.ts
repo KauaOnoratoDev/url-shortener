@@ -1,3 +1,5 @@
+import { PlanValue } from './Plan';
+
 export class User {
     constructor(
         readonly id: string,
@@ -5,6 +7,7 @@ export class User {
         readonly email: string,
         readonly passwordHash: string,
         readonly createdAt: Date,
-        readonly updatedAt: Date
+        readonly updatedAt: Date,
+        readonly plan?: PlanValue
     ) {}
 }
