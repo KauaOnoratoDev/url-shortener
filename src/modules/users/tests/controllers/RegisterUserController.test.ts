@@ -45,7 +45,13 @@ describe('RegisterUserController', () => {
     });
 
     it('should propagate errors from the use case', async () => {
-        req = { body: {} };
+        req = {
+            body: {
+                name: 'Maria Silva',
+                email: 'maria@example.com',
+                password: 'Strong@123',
+            },
+        };
         registerUserUseCase.execute.mockRejectedValue(
             new Error('Unexpected error')
         );

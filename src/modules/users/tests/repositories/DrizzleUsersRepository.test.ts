@@ -1,5 +1,6 @@
 import { DrizzleUsersRepository } from '@modules/users/repositories/DrizzleUsersRepository';
 import { db } from '@shared/infra/db';
+import { User } from '@modules/users/models/User';
 
 jest.mock('@shared/infra/db', () => ({
     db: {
@@ -68,13 +69,16 @@ describe('DrizzleUsersRepository', () => {
         const result = await repository.findByEmail('maria@example.com');
 
         expect(where).toHaveBeenCalled();
-        expect(result).toEqual({
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            created_at: user.createdAt,
-            updated_at: user.updatedAt,
-        });
+        expect(result).toEqual(
+            new User(
+                user.id,
+                user.name,
+                user.email,
+                user.passwordHash,
+                user.createdAt,
+                user.updatedAt
+            )
+        );
     });
 
     it('should return null when the email is not found', async () => {

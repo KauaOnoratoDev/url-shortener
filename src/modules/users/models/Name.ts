@@ -13,6 +13,6 @@ export class Name {
     }
 
     static create(name: string): Name {
-        return new Name(name);
+        return new Name(name.trim().replace(/\s+/g, ' '));
     }
 }

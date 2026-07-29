@@ -66,8 +66,9 @@ describe('RegisterUserUseCase', () => {
             id: 'user-1',
             name: 'Maria Silva',
             email: 'maria@example.com',
-            created_at: new Date(),
-            updated_at: new Date(),
+            passwordHash: 'ValidHash1!',
+            createdAt: new Date(),
+            updatedAt: new Date(),
         });
 
         await expect(

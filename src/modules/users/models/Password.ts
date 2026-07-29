@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { HashProvider } from '@shared/providers/HashProvider';
 
 export class Password {
-    private passwordSchema = z
+    private static readonly passwordSchema = z
         .string()
         .min(8, { message: 'A senha deve ter no mínimo 8 caracteres.' })
         .regex(/[!@#$%^&*(),.?":{}|<>]/, {
@@ -15,14 +15,13 @@ export class Password {
             message: 'A senha deve conter pelo menos um número.',
         });
 
-    private constructor(readonly value: string) {
-        this.passwordSchema.parse(value);
-    }
+    private constructor(readonly value: string) {}
 
     static async create(
         password: string,
         hashProvider: HashProvider
     ): Promise<Password> {
+        Password.passwordSchema.parse(password);
         const hashedPassword = await hashProvider.hash(password);
         return new Password(hashedPassword);
     }

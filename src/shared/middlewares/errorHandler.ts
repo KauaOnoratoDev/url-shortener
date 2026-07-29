@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '@shared/errors/AppError';
+import { ZodError } from 'zod';
 
 export function errorHandler(
     error: Error,
@@ -7,8 +8,18 @@ export function errorHandler(
     res: Response,
     next: NextFunction
 ) {
+    void next;
+
     if (!(error instanceof AppError)) {
-        return next(error);
+        if (error instanceof ZodError) {
+            return res.status(400).json({
+                message: 'Dados inválidos',
+                issues: error.issues,
+            });
+        }
+
+        console.error(error);
+        return res.status(500).json({ message: 'Erro interno do servidor' });
     }
 
     return res.status(error.statusCode).json({

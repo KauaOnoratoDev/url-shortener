@@ -3,6 +3,7 @@ import { CreateUserRepositoryDTO, UserResponseDTO } from '../DTOs';
 import { UsersRepository } from './UsersRepository';
 import { db } from '@infra/db';
 import { usersTable as users } from '@infra/db/schemas/users';
+import { User } from '../models/User';
 
 export class DrizzleUsersRepository implements UsersRepository {
     async create(data: CreateUserRepositoryDTO): Promise<UserResponseDTO> {
@@ -27,7 +28,7 @@ export class DrizzleUsersRepository implements UsersRepository {
         return response;
     }
 
-    async findByEmail(email: string): Promise<UserResponseDTO | null> {
+    async findByEmail(email: string): Promise<User | null> {
         const [user] = await db
             .select()
             .from(users)
@@ -35,14 +36,13 @@ export class DrizzleUsersRepository implements UsersRepository {
 
         if (!user) return null;
 
-        const response = {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            created_at: user.createdAt,
-            updated_at: user.updatedAt,
-        };
-
-        return response || null;
+        return new User(
+            user.id,
+            user.name,
+            user.email,
+            user.passwordHash,
+            user.createdAt,
+            user.updatedAt
+        );
     }
 }

@@ -18,3 +18,22 @@ export type UserResponseDTO = {
     created_at: Date;
     updated_at: Date;
 };
+
+export type LoginUserDTO = {
+    email: string;
+    password: string;
+};
+
+type TokenResponseDTO = {
+    accessToken: string;
+};
+
+export type LoginUserResponseDTO = {
+    userId: string;
+    token: TokenResponseDTO;
+    refreshToken: string;
+};
+
+export type RefreshUserDTO = {
+    refreshToken: string;
+};
