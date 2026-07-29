@@ -173,6 +173,7 @@ describe('DrizzleShortUrlRepository', () => {
                     clicks: 10,
                     createdAt: new Date(),
                     expiresAt: null,
+                    alias: 'my-link',
                 },
             ];
 
@@ -239,6 +240,7 @@ describe('DrizzleShortUrlRepository', () => {
                 clicks: 10,
                 createdAt: new Date(),
                 expiresAt: null,
+                alias: 'my-link',
             };
 
             const limit = jest.fn().mockResolvedValue([url]);
@@ -332,6 +334,21 @@ describe('DrizzleShortUrlRepository', () => {
             await repository.delete(1, 'user-1');
 
             expect(db.delete).toHaveBeenCalled();
+            expect(where).toHaveBeenCalled();
+        });
+    });
+
+    describe('addAlias', () => {
+        it('should add an alias to a url owned by the user', async () => {
+            const where = jest.fn().mockResolvedValue(undefined);
+            const set = jest.fn().mockReturnValue({ where });
+
+            (db.update as jest.Mock).mockReturnValue({ set });
+
+            await repository.addAlias(1, 'my-link', 'user-1');
+
+            expect(db.update).toHaveBeenCalled();
+            expect(set).toHaveBeenCalledWith({ alias: 'my-link' });
             expect(where).toHaveBeenCalled();
         });
     });

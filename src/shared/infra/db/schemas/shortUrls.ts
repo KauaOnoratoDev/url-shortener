@@ -35,4 +35,6 @@ export const shortUrlsTable = pgTable('short_urls', {
     }),
 
     expired: boolean().default(false).notNull(),
+
+    alias: text(),
 });

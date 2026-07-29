@@ -1,4 +1,4 @@
-import { and, eq, lt, sql } from 'drizzle-orm';
+import { and, eq, lt, or, sql } from 'drizzle-orm';
 import { ShortUrlRepository } from '@modules/urls/repositories/ShortUrlRepository';
 import { shortUrlsTable as urls } from '@shared/infra/db/schemas/shortUrls';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -57,7 +57,10 @@ export class DrizzleShortUrlRepository implements ShortUrlRepository {
             .set({ expired: true })
             .where(
                 and(
-                    eq(urls.shortUrlCode, shortUrlCode),
+                    or(
+                        eq(urls.shortUrlCode, shortUrlCode),
+                        eq(urls.alias, shortUrlCode)
+                    ),
                     eq(urls.expired, false),
                     lt(urls.expiresAt, new Date())
                 )
@@ -66,7 +69,12 @@ export class DrizzleShortUrlRepository implements ShortUrlRepository {
         const result = await this.db
             .select({ fullUrl: urls.fullUrl, expired: urls.expired })
             .from(urls)
-            .where(eq(urls.shortUrlCode, shortUrlCode))
+            .where(
+                or(
+                    eq(urls.shortUrlCode, shortUrlCode),
+                    eq(urls.alias, shortUrlCode)
+                )
+            )
             .limit(1);
 
         if (result.length === 0) {
@@ -82,7 +90,12 @@ export class DrizzleShortUrlRepository implements ShortUrlRepository {
             .set({
                 clicks: sql`${urls.clicks} + 1`,
             })
-            .where(eq(urls.shortUrlCode, shortUrlCode));
+            .where(
+                or(
+                    eq(urls.shortUrlCode, shortUrlCode),
+                    eq(urls.alias, shortUrlCode)
+                )
+            );
     }
 
     async getUrlsByUserId(userId: string): Promise<ShortUrlResponseDTO[]> {
@@ -95,6 +108,7 @@ export class DrizzleShortUrlRepository implements ShortUrlRepository {
                 createdAt: urls.createdAt,
                 expiresAt: urls.expiresAt,
                 expired: urls.expired,
+                alias: urls.alias,
             })
             .from(urls)
             .where(eq(urls.userId, userId));
@@ -115,6 +129,7 @@ export class DrizzleShortUrlRepository implements ShortUrlRepository {
                 createdAt: urls.createdAt,
                 expiresAt: urls.expiresAt,
                 expired: urls.expired,
+                alias: urls.alias,
             })
             .from(urls)
             .where(and(eq(urls.id, id), eq(urls.userId, userId)))
@@ -139,6 +154,13 @@ export class DrizzleShortUrlRepository implements ShortUrlRepository {
     async delete(id: number, userId: string) {
         await this.db
             .delete(urls)
+            .where(and(eq(urls.id, id), eq(urls.userId, userId)));
+    }
+
+    async addAlias(id: number, alias: string, userId: string): Promise<void> {
+        await this.db
+            .update(urls)
+            .set({ alias })
             .where(and(eq(urls.id, id), eq(urls.userId, userId)));
     }
 }

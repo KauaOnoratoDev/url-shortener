@@ -30,6 +30,20 @@ describe('RedirectUrlUseCase', () => {
         expect(result).toBe('https://google.com');
     });
 
+    it('should redirect using an alias and increment clicks with that alias', async () => {
+        repository.getForRedirect.mockResolvedValue({
+            fullUrl: 'https://google.com',
+            expired: false,
+        });
+        repository.addClick.mockResolvedValue();
+
+        const result = await useCase.redirect('my-link');
+
+        expect(repository.getForRedirect).toHaveBeenCalledWith('my-link');
+        expect(repository.addClick).toHaveBeenCalledWith('my-link');
+        expect(result).toBe('https://google.com');
+    });
+
     it('should throw when url does not exist', async () => {
         repository.getForRedirect.mockResolvedValue(undefined);
 

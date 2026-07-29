@@ -11,7 +11,13 @@ export interface ShortUrlResponseDTO {
     createdAt: Date;
     expiresAt: Date | null;
     expired?: boolean;
+    alias?: string | null;
 }
+
+export type ShortUrlRedirectDTO = Pick<
+    ShortUrlResponseDTO,
+    'fullUrl' | 'expired'
+>;
 
 export interface UpdateShortUrlDTO {
     fullUrl?: string;

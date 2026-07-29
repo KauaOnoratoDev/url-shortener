@@ -6,6 +6,7 @@ import { makeGetUrlController } from '@modules/urls/factories/makeGetUrlControll
 import { makeDeleteUrlController } from '@modules/urls/factories/makeDeleteUrlController';
 import { makeUpdateUrlController } from '@modules/urls/factories/makeUpdateUrlController';
 import { authMiddleware } from '@shared/middlewares/authMiddleware';
+import { makeAddAliasUrlController } from '@modules/urls/factories/makeAddAliasUrlController';
 
 const urlRoutes = Router();
 
@@ -27,6 +28,10 @@ urlRoutes.delete('/:id', authMiddleware, (req, res) =>
 
 urlRoutes.patch('/:id', authMiddleware, (req, res) =>
     makeUpdateUrlController().handle(req, res)
+);
+
+urlRoutes.patch('/alias/:id', authMiddleware, (req, res) =>
+    makeAddAliasUrlController().handle(req, res)
 );
 
 export default urlRoutes;

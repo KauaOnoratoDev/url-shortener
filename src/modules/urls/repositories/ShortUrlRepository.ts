@@ -1,13 +1,9 @@
 import {
     createShortUrlDTO,
+    ShortUrlRedirectDTO,
     ShortUrlResponseDTO,
     UpdateShortUrlDTO,
 } from '@modules/urls/DTOs';
-
-export type ShortUrlRedirectDTO = Pick<
-    ShortUrlResponseDTO,
-    'fullUrl' | 'expired'
->;
 
 export interface ShortUrlRepository {
     create(data: createShortUrlDTO): Promise<number>;
@@ -28,4 +24,5 @@ export interface ShortUrlRepository {
         data: UpdateShortUrlDTO
     ): Promise<ShortUrlResponseDTO | undefined>;
     delete(id: number, userId: string): Promise<void>;
+    addAlias(id: number, alias: string, userId: string): Promise<void>;
 }
