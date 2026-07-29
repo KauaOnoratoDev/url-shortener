@@ -32,6 +32,7 @@ describe('UpdateUrlController', () => {
                 fullUrl: 'https://github.com',
                 expiresAt: null,
             },
+            user: { userId: 'user-1', tokenType: 'access' },
         };
 
         const updatedUrl = {
@@ -47,7 +48,7 @@ describe('UpdateUrlController', () => {
 
         await controller.handle(req as Request, res as Response);
 
-        expect(updateUrlUseCase.execute).toHaveBeenCalledWith(1, {
+        expect(updateUrlUseCase.execute).toHaveBeenCalledWith(1, 'user-1', {
             fullUrl: 'https://github.com',
             expiresAt: null,
         });
@@ -65,6 +66,7 @@ describe('UpdateUrlController', () => {
                 fullUrl: 'https://github.com',
                 expiresAt: null,
             },
+            user: { userId: 'user-1', tokenType: 'access' },
         };
 
         updateUrlUseCase.execute.mockRejectedValue(new UrlNotFoundError());
@@ -73,7 +75,7 @@ describe('UpdateUrlController', () => {
             controller.handle(req as Request, res as Response)
         ).rejects.toThrow('URL não encontrada');
 
-        expect(updateUrlUseCase.execute).toHaveBeenCalledWith(1, {
+        expect(updateUrlUseCase.execute).toHaveBeenCalledWith(1, 'user-1', {
             fullUrl: 'https://github.com',
             expiresAt: null,
         });

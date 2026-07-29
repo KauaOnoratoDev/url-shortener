@@ -6,10 +6,14 @@ export interface ShortUrlRepository {
     getOriginalUrl(shortUrlCode: string): Promise<string | undefined>;
     addClick(shortUrlCode: string): Promise<void>;
     getUrlsByUserId(userId: string): Promise<ShortUrlResponseDTO[]>;
-    findById(id: number): Promise<ShortUrlResponseDTO | undefined>;
+    findById(
+        id: number,
+        userId: string
+    ): Promise<ShortUrlResponseDTO | undefined>;
     update(
         id: number,
+        userId: string,
         data: UpdateShortUrlDTO
     ): Promise<ShortUrlResponseDTO | undefined>;
-    delete(id: number): Promise<void>;
+    delete(id: number, userId: string): Promise<void>;
 }

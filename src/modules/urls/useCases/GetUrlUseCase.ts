@@ -5,8 +5,8 @@ import { ShortUrlResponseDTO } from '@modules/urls/DTOs';
 export class GetUrlUseCase {
     constructor(private shortUrlRepository: ShortUrlRepository) {}
 
-    async execute(id: number): Promise<ShortUrlResponseDTO> {
-        const url = await this.shortUrlRepository.findById(id);
+    async execute(id: number, userId: string): Promise<ShortUrlResponseDTO> {
+        const url = await this.shortUrlRepository.findById(id, userId);
 
         if (!url) {
             throw new UrlNotFoundError();

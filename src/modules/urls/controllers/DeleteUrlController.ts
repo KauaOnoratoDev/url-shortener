@@ -6,8 +6,15 @@ export class DeleteUrlController {
 
     async handle(req: Request, res: Response): Promise<Response> {
         const { id } = req.params;
+        const userId = req.user?.userId;
 
-        await this.deleteUrlUseCase.execute(Number(id));
+        if (!userId) {
+            return res
+                .status(401)
+                .json({ error: 'User authentication is required' });
+        }
+
+        await this.deleteUrlUseCase.execute(Number(id), userId);
         return res.status(204).send();
     }
 }

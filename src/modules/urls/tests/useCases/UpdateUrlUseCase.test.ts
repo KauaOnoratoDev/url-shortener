@@ -32,14 +32,14 @@ describe('UpdateUrlUseCase', () => {
         repository.findById.mockResolvedValue(url);
         repository.update.mockResolvedValue(updatedUrl);
 
-        const result = await useCase.execute(1, {
+        const result = await useCase.execute(1, 'user-1', {
             ...url,
             fullUrl: 'https://github.com',
         });
 
-        expect(repository.findById).toHaveBeenCalledWith(1);
+        expect(repository.findById).toHaveBeenCalledWith(1, 'user-1');
 
-        expect(repository.update).toHaveBeenCalledWith(1, {
+        expect(repository.update).toHaveBeenCalledWith(1, 'user-1', {
             ...url,
             fullUrl: 'https://github.com',
         });
@@ -65,12 +65,12 @@ describe('UpdateUrlUseCase', () => {
             expiresAt,
         });
 
-        await useCase.execute(1, {
+        await useCase.execute(1, 'user-1', {
             ...url,
             expiresAt,
         });
 
-        expect(repository.update).toHaveBeenCalledWith(1, {
+        expect(repository.update).toHaveBeenCalledWith(1, 'user-1', {
             ...url,
             expiresAt,
         });
@@ -80,7 +80,7 @@ describe('UpdateUrlUseCase', () => {
         repository.findById.mockResolvedValue(undefined);
 
         await expect(
-            useCase.execute(1, {
+            useCase.execute(1, 'user-1', {
                 fullUrl: 'https://google.com',
                 expiresAt: null,
             })
@@ -93,7 +93,7 @@ describe('UpdateUrlUseCase', () => {
         repository.findById.mockRejectedValue(new Error('Database error'));
 
         await expect(
-            useCase.execute(1, {
+            useCase.execute(1, 'user-1', {
                 fullUrl: 'https://google.com',
                 expiresAt: null,
             })
@@ -114,6 +114,8 @@ describe('UpdateUrlUseCase', () => {
 
         repository.update.mockRejectedValue(new Error('Database error'));
 
-        await expect(useCase.execute(1, url)).rejects.toThrow('Database error');
+        await expect(useCase.execute(1, 'user-1', url)).rejects.toThrow(
+            'Database error'
+        );
     });
 });

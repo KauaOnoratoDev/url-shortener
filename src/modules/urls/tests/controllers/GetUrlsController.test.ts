@@ -22,17 +22,17 @@ describe('GetUrlsController', () => {
         };
     });
 
-    it('should return 400 if userId is not provided', async () => {
+    it('should return 401 if the request is not authenticated', async () => {
         req = {
-            query: {},
+            query: { userId: 'attacker-id' },
         };
 
         await controller.handle(req as Request, res as Response);
 
-        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.status).toHaveBeenCalledWith(401);
 
         expect(res.json).toHaveBeenCalledWith({
-            error: 'User ID is required',
+            error: 'User authentication is required',
         });
 
         expect(getUrlsUseCase.execute).not.toHaveBeenCalled();
@@ -40,9 +40,8 @@ describe('GetUrlsController', () => {
 
     it('should return urls successfully', async () => {
         req = {
-            query: {
-                userId: 'user-1',
-            },
+            query: { userId: 'attacker-id' },
+            user: { userId: 'user-1', tokenType: 'access' },
         };
 
         const urls = [
@@ -69,9 +68,8 @@ describe('GetUrlsController', () => {
 
     it('should propagate errors from use case', async () => {
         req = {
-            query: {
-                userId: 'user-1',
-            },
+            query: { userId: 'attacker-id' },
+            user: { userId: 'user-1', tokenType: 'access' },
         };
 
         getUrlsUseCase.execute.mockRejectedValue(new Error('Database error'));

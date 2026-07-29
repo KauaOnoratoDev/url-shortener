@@ -5,13 +5,15 @@ export class GetUrlsController {
     constructor(private getUrlsUseCase: GetUrlsUseCase) {}
 
     async handle(req: Request, res: Response): Promise<Response> {
-        const { userId } = req.query;
+        const userId = req.user?.userId;
 
         if (!userId) {
-            return res.status(400).json({ error: 'User ID is required' });
+            return res
+                .status(401)
+                .json({ error: 'User authentication is required' });
         }
 
-        const urls = await this.getUrlsUseCase.execute(userId as string);
+        const urls = await this.getUrlsUseCase.execute(userId);
         return res.status(200).json(urls);
     }
 }

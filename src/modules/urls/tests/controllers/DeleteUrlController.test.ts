@@ -28,13 +28,14 @@ describe('DeleteUrlController', () => {
             params: {
                 id: '1',
             },
+            user: { userId: 'user-1', tokenType: 'access' },
         };
 
         deleteUrlUseCase.execute.mockResolvedValue(undefined);
 
         await controller.handle(req as Request, res as Response);
 
-        expect(deleteUrlUseCase.execute).toHaveBeenCalledWith(1);
+        expect(deleteUrlUseCase.execute).toHaveBeenCalledWith(1, 'user-1');
         expect(res.status).toHaveBeenCalledWith(204);
         expect(res.send).toHaveBeenCalled();
     });
@@ -44,6 +45,7 @@ describe('DeleteUrlController', () => {
             params: {
                 id: '1',
             },
+            user: { userId: 'user-1', tokenType: 'access' },
         };
 
         deleteUrlUseCase.execute.mockRejectedValue(new Error('Database error'));
@@ -52,6 +54,6 @@ describe('DeleteUrlController', () => {
             controller.handle(req as Request, res as Response)
         ).rejects.toThrow('Database error');
 
-        expect(deleteUrlUseCase.execute).toHaveBeenCalledWith(1);
+        expect(deleteUrlUseCase.execute).toHaveBeenCalledWith(1, 'user-1');
     });
 });

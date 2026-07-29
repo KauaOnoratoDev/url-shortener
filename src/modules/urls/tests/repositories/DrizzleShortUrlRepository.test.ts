@@ -240,7 +240,7 @@ describe('DrizzleShortUrlRepository', () => {
                 from,
             });
 
-            const result = await repository.findById(1);
+            const result = await repository.findById(1, 'user-1');
 
             expect(db.select).toHaveBeenCalled();
             expect(where).toHaveBeenCalled();
@@ -263,7 +263,7 @@ describe('DrizzleShortUrlRepository', () => {
                 from,
             });
 
-            const result = await repository.findById(1);
+            const result = await repository.findById(1, 'user-1');
 
             expect(result).toBeUndefined();
         });
@@ -292,7 +292,7 @@ describe('DrizzleShortUrlRepository', () => {
 
             jest.spyOn(repository, 'findById').mockResolvedValue(updatedUrl);
 
-            const result = await repository.update(1, updatedUrl);
+            const result = await repository.update(1, 'user-1', updatedUrl);
 
             expect(db.update).toHaveBeenCalled();
             expect(set).toHaveBeenCalledWith({
@@ -300,7 +300,7 @@ describe('DrizzleShortUrlRepository', () => {
                 expiresAt: updatedUrl.expiresAt,
             });
 
-            expect(repository.findById).toHaveBeenCalledWith(1);
+            expect(repository.findById).toHaveBeenCalledWith(1, 'user-1');
             expect(result).toEqual(updatedUrl);
         });
     });
@@ -313,7 +313,7 @@ describe('DrizzleShortUrlRepository', () => {
                 where,
             });
 
-            await repository.delete(1);
+            await repository.delete(1, 'user-1');
 
             expect(db.delete).toHaveBeenCalled();
             expect(where).toHaveBeenCalled();

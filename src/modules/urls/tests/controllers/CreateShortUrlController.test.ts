@@ -39,7 +39,7 @@ describe('CreateShortUrlController', () => {
         expect(createShortUrlUseCase.execute).not.toHaveBeenCalled();
     });
 
-    it('should return 400 if userId is not provided', async () => {
+    it('should return 401 if the request is not authenticated', async () => {
         req = {
             body: {
                 fullUrl: 'https://google.com',
@@ -48,9 +48,9 @@ describe('CreateShortUrlController', () => {
 
         await controller.handle(req as Request, res as Response);
 
-        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.status).toHaveBeenCalledWith(401);
         expect(res.json).toHaveBeenCalledWith({
-            error: 'User ID is required',
+            error: 'User authentication is required',
         });
 
         expect(createShortUrlUseCase.execute).not.toHaveBeenCalled();
@@ -60,8 +60,8 @@ describe('CreateShortUrlController', () => {
         req = {
             body: {
                 fullUrl: 'https://google.com',
-                userId: 'user-1',
             },
+            user: { userId: 'user-1', tokenType: 'access' },
         };
 
         createShortUrlUseCase.execute.mockResolvedValue('abc123');
@@ -83,8 +83,8 @@ describe('CreateShortUrlController', () => {
         req = {
             body: {
                 fullUrl: 'https://google.com',
-                userId: 'user-1',
             },
+            user: { userId: 'user-1', tokenType: 'access' },
         };
 
         createShortUrlUseCase.execute.mockRejectedValue(

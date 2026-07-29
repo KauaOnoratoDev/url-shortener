@@ -26,11 +26,11 @@ describe('DeleteUrlUseCase', () => {
 
         repository.delete.mockResolvedValue(undefined);
 
-        await useCase.execute(1);
+        await useCase.execute(1, 'user-1');
 
-        expect(repository.findById).toHaveBeenCalledWith(1);
+        expect(repository.findById).toHaveBeenCalledWith(1, 'user-1');
 
-        expect(repository.delete).toHaveBeenCalledWith(1);
+        expect(repository.delete).toHaveBeenCalledWith(1, 'user-1');
     });
 
     it('should throw when repository fails', async () => {
@@ -45,6 +45,8 @@ describe('DeleteUrlUseCase', () => {
 
         repository.delete.mockRejectedValue(new Error('Database error'));
 
-        await expect(useCase.execute(1)).rejects.toThrow('Database error');
+        await expect(useCase.execute(1, 'user-1')).rejects.toThrow(
+            'Database error'
+        );
     });
 });

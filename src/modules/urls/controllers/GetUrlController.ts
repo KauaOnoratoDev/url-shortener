@@ -6,7 +6,15 @@ export class GetUrlController {
 
     async handle(req: Request, res: Response): Promise<Response> {
         const { id } = req.params;
-        const url = await this.getUrlUseCase.execute(Number(id));
+        const userId = req.user?.userId;
+
+        if (!userId) {
+            return res
+                .status(401)
+                .json({ error: 'User authentication is required' });
+        }
+
+        const url = await this.getUrlUseCase.execute(Number(id), userId);
 
         return res.status(200).json(url);
     }
