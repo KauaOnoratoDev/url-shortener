@@ -56,4 +56,20 @@ describe('GetUrlAnalyticsController', () => {
         expect(response.status).toHaveBeenCalledWith(400);
         expect(useCase.execute).not.toHaveBeenCalled();
     });
+
+    it('rejects pagination whose database offset is not a safe integer', async () => {
+        const request = {
+            params: { id: '1' },
+            query: {
+                page: String(Number.MAX_SAFE_INTEGER),
+                limit: '100',
+            },
+            user: { userId: 'user-1' },
+        } as unknown as Request;
+
+        await controller.handle(request, response as Response);
+
+        expect(response.status).toHaveBeenCalledWith(400);
+        expect(useCase.execute).not.toHaveBeenCalled();
+    });
 });

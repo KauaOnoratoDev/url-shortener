@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 
 import { GetUrlAnalyticsUseCase } from '@modules/analytics/useCases/GetUrlAnalyticsUseCase';
+import { parsePositiveInteger } from '@shared/utils/parsePositiveInteger';
 
 export class GetUrlAnalyticsController {
     constructor(private getUrlAnalyticsUseCase: GetUrlAnalyticsUseCase) {}
@@ -14,16 +15,16 @@ export class GetUrlAnalyticsController {
                 .json({ error: 'User authentication is required' });
         }
 
-        const shortUrlId = Number(req.params.id);
+        const shortUrlId = parsePositiveInteger(req.params.id);
         const page = this.parsePositiveInteger(req.query.page, 1);
         const limit = this.parsePositiveInteger(req.query.limit, 25);
 
         if (
-            !Number.isInteger(shortUrlId) ||
-            shortUrlId <= 0 ||
+            shortUrlId === null ||
             page === null ||
             limit === null ||
-            limit > 100
+            limit > 100 ||
+            !Number.isSafeInteger((page - 1) * limit)
         ) {
             return res.status(400).json({
                 error: 'Invalid id or pagination parameters',
@@ -45,10 +46,7 @@ export class GetUrlAnalyticsController {
         defaultValue: number
     ): number | null {
         if (value === undefined) return defaultValue;
-        if (typeof value !== 'string' || !/^\d+$/.test(value)) return null;
 
-        const parsed = Number(value);
-
-        return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
+        return parsePositiveInteger(value);
     }
 }

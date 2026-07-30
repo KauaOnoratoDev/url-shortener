@@ -59,7 +59,7 @@ export class DrizzleUrlAccessRepository implements UrlAccessRepository {
                 })
                 .from(accesses)
                 .where(eq(accesses.shortUrlId, shortUrlId))
-                .orderBy(desc(accesses.accessedAt))
+                .orderBy(desc(accesses.accessedAt), desc(accesses.id))
                 .limit(limit)
                 .offset(offset),
             this.getDistribution(shortUrlId, accesses.browser),
