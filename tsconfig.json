@@ -1,22 +1,21 @@
 {
     "compilerOptions": {
         "target": "ES2022",
-        "module": "commonjs",
+        "module": "es2022",
         "moduleResolution": "bundler",
         "rootDir": "./src",
         "outDir": "./dist",
         "strict": true,
         "skipLibCheck": true,
         "esModuleInterop": true,
-        "ignoreDeprecations": "6.0",
+        "ignoreDeprecations": "5.0",
         "types": ["node", "jest"],
-        "baseUrl": "./",
         "paths": {
-            "@core/*": ["src/core/*"],
-            "@modules/*": ["src/modules/*"],
-            "@shared/*": ["src/shared/*"],
-            "@infra/*": ["src/shared/infra/*"],
-            "@providers/*": ["src/shared/providers/*"]
+            "@core/*": ["./src/core/*"],
+            "@modules/*": ["./src/modules/*"],
+            "@shared/*": ["./src/shared/*"],
+            "@infra/*": ["./src/shared/infra/*"],
+            "@providers/*": ["./src/shared/providers/*"]
         }
     },
     "include": ["src"]

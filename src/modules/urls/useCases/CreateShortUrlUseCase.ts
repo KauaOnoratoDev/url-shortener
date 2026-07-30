@@ -1,23 +1,33 @@
-import { createShortUrlDTO } from '@modules/urls/DTOs';
+import { CreateShortUrlDTO } from '@modules/urls/DTOs';
 import { ShortUrlRepository } from '@modules/urls/repositories/ShortUrlRepository';
 import { HashidsProvider } from '@providers/HashidsProvider';
+import { ValidateUrlProvider } from '@providers/ValidateUrlProvider';
+import { UserPlanRepository } from '@modules/users/repositories/UserPlanRepository';
+import { calculateExpirationDate } from '@shared/utils/calculateExpirationDate';
 
 export class CreateShortUrlUseCase {
     constructor(
         private shortUrlRepository: ShortUrlRepository,
-        private hashProvider: HashidsProvider
+        private hashProvider: HashidsProvider,
+        private validateUrlProvider: ValidateUrlProvider,
+        private userPlanRepository?: UserPlanRepository
     ) {}
 
-    async execute({ fullUrl, userId }: createShortUrlDTO) {
-        const urlId = await this.shortUrlRepository.create(fullUrl, userId);
-        const shortUrlCode = this.generateShortUrl(urlId);
+    async execute({ fullUrl, userId }: CreateShortUrlDTO): Promise<string> {
+        this.validateUrlProvider.validate(fullUrl);
 
-        await this.shortUrlRepository.updateShortUrlCode(urlId, shortUrlCode);
+        const userPlan =
+            (await this.userPlanRepository?.findPlanByUserId(userId)) ?? 'free';
 
-        return shortUrlCode;
-    }
+        const expiration =
+            userPlan === 'free'
+                ? (process.env.FREE_PLAN_EXPIRATION ?? '30d')
+                : (process.env.PREMIUM_PLAN_EXPIRATION ?? '365d');
+        const expiresAt = calculateExpirationDate(expiration);
 
-    private generateShortUrl(urlId: number) {
-        return this.hashProvider.encode(urlId);
+        return this.shortUrlRepository.create(
+            { fullUrl, userId, expiresAt },
+            (urlId) => this.hashProvider.encode(urlId)
+        );
     }
 }

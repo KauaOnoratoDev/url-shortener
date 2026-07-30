@@ -2,33 +2,41 @@ import { Router } from 'express';
 
 import { makeCreateShortUrlController } from '@modules/urls/factories/makeCreateShortUrlController';
 import { makeGetUrlsController } from '@modules/urls/factories/makeGetUrlsController';
-import { makeRedirectUrlController } from '@modules/urls/factories/makeRedirectUrlController';
 import { makeGetUrlController } from '@modules/urls/factories/makeGetUrlController';
 import { makeDeleteUrlController } from '@modules/urls/factories/makeDeleteUrlController';
 import { makeUpdateUrlController } from '@modules/urls/factories/makeUpdateUrlController';
+import { authMiddleware } from '@shared/middlewares/authMiddleware';
+import { makeAddAliasUrlController } from '@modules/urls/factories/makeAddAliasUrlController';
+import { makeGetUrlAnalyticsController } from '@modules/analytics/factories/makeGetUrlAnalyticsController';
 
 const urlRoutes = Router();
 
-urlRoutes.post('/shorten', (req, res) =>
+urlRoutes.post('/', authMiddleware, (req, res) =>
     makeCreateShortUrlController().handle(req, res)
 );
 
-urlRoutes.get('/urls', (req, res) => makeGetUrlsController().handle(req, res));
-
-urlRoutes.get('/:shortUrlCode', (req, res) =>
-    makeRedirectUrlController().handle(req, res)
+urlRoutes.get('/', authMiddleware, (req, res) =>
+    makeGetUrlsController().handle(req, res)
 );
 
-urlRoutes.get('/urls/:id', (req, res) =>
+urlRoutes.get('/:id/analytics', authMiddleware, (req, res) =>
+    makeGetUrlAnalyticsController().handle(req, res)
+);
+
+urlRoutes.get('/:id', authMiddleware, (req, res) =>
     makeGetUrlController().handle(req, res)
 );
 
-urlRoutes.delete('/urls/:id', (req, res) =>
+urlRoutes.delete('/:id', authMiddleware, (req, res) =>
     makeDeleteUrlController().handle(req, res)
 );
 
-urlRoutes.patch('/urls/:id', (req, res) =>
+urlRoutes.patch('/:id', authMiddleware, (req, res) =>
     makeUpdateUrlController().handle(req, res)
+);
+
+urlRoutes.patch('/alias/:id', authMiddleware, (req, res) =>
+    makeAddAliasUrlController().handle(req, res)
 );
 
 export default urlRoutes;

@@ -1,9 +1,10 @@
 import { DrizzleShortUrlRepository } from '@modules/urls/repositories/DrizzleShortUrlRepository';
 import { db } from '@shared/infra/db';
+import { UrlIdentifierAlreadyExistsError } from '@shared/errors/UrlIdentifierAlreadyExistsError';
 
 jest.mock('@shared/infra/db', () => ({
     db: {
-        insert: jest.fn(),
+        transaction: jest.fn(),
         update: jest.fn(),
         select: jest.fn(),
         delete: jest.fn(),
@@ -14,309 +15,207 @@ describe('DrizzleShortUrlRepository', () => {
     let repository: DrizzleShortUrlRepository;
 
     beforeEach(() => {
-        jest.clearAllMocks();
         repository = new DrizzleShortUrlRepository(db);
     });
 
     describe('create', () => {
-        it('should create a short url and return its id', async () => {
-            const returning = jest.fn().mockResolvedValue([{ id: 123 }]);
-            const values = jest.fn().mockReturnValue({
-                returning,
-            });
-
-            (db.insert as jest.Mock).mockReturnValue({
-                values,
-            });
-
-            const result = await repository.create(
-                'https://google.com',
-                'user-1'
+        it('creates the row, expiration and public code in one transaction', async () => {
+            const insertReturning = jest.fn().mockResolvedValue([{ id: 123 }]);
+            const insertValues = jest
+                .fn()
+                .mockReturnValue({ returning: insertReturning });
+            const updateReturning = jest
+                .fn()
+                .mockResolvedValue([{ shortUrlCode: 'abc123' }]);
+            const updateWhere = jest
+                .fn()
+                .mockReturnValue({ returning: updateReturning });
+            const updateSet = jest.fn().mockReturnValue({ where: updateWhere });
+            const transaction = {
+                insert: jest.fn().mockReturnValue({ values: insertValues }),
+                update: jest.fn().mockReturnValue({ set: updateSet }),
+            };
+            (db.transaction as jest.Mock).mockImplementation(async (callback) =>
+                callback(transaction)
             );
-
-            expect(db.insert).toHaveBeenCalled();
-            expect(values).toHaveBeenCalledWith({
-                fullUrl: 'https://google.com',
-                userId: 'user-1',
-            });
-            expect(returning).toHaveBeenCalled();
-
-            expect(result).toBe(123);
-        });
-
-        it('should throw an error when no record is returned', async () => {
-            const returning = jest.fn().mockResolvedValue([]);
-            const values = jest.fn().mockReturnValue({
-                returning,
-            });
-
-            (db.insert as jest.Mock).mockReturnValue({
-                values,
-            });
+            const expiresAt = new Date('2026-08-29T00:00:00.000Z');
+            const generateCode = jest.fn().mockReturnValue('abc123');
 
             await expect(
-                repository.create('https://google.com', 'user-1')
+                repository.create(
+                    {
+                        fullUrl: 'https://google.com',
+                        userId: 'user-1',
+                        expiresAt,
+                    },
+                    generateCode
+                )
+            ).resolves.toBe('abc123');
+
+            expect(insertValues).toHaveBeenCalledWith({
+                fullUrl: 'https://google.com',
+                userId: 'user-1',
+                expiresAt,
+            });
+            expect(generateCode).toHaveBeenCalledWith(123);
+            expect(updateSet).toHaveBeenCalledWith({
+                shortUrlCode: 'abc123',
+            });
+        });
+
+        it('rejects the transaction when no inserted row is returned', async () => {
+            const returning = jest.fn().mockResolvedValue([]);
+            const transaction = {
+                insert: jest.fn().mockReturnValue({
+                    values: jest.fn().mockReturnValue({ returning }),
+                }),
+            };
+            (db.transaction as jest.Mock).mockImplementation(async (callback) =>
+                callback(transaction)
+            );
+
+            await expect(
+                repository.create(
+                    {
+                        fullUrl: 'https://google.com',
+                        userId: 'user-1',
+                        expiresAt: new Date(),
+                    },
+                    jest.fn()
+                )
             ).rejects.toThrow('Could not create short URL.');
         });
     });
 
-    describe('updateShortUrlCode', () => {
-        it('should update the short url code', async () => {
-            const where = jest.fn().mockResolvedValue(undefined);
-            const set = jest.fn().mockReturnValue({
-                where,
-            });
-
-            (db.update as jest.Mock).mockReturnValue({
-                set,
-            });
-
-            await repository.updateShortUrlCode(1, 'abc123');
-
-            expect(db.update).toHaveBeenCalled();
-            expect(set).toHaveBeenCalledWith({
-                shortUrlCode: 'abc123',
-            });
-            expect(where).toHaveBeenCalled();
-        });
-    });
-
-    describe('getOriginalUrl', () => {
-        it('should return original url when short code exists', async () => {
+    describe('getForRedirect', () => {
+        it('returns redirect data for either a code or alias', async () => {
             const limit = jest.fn().mockResolvedValue([
                 {
+                    id: 1,
                     fullUrl: 'https://google.com',
+                    expired: false,
                 },
             ]);
+            const where = jest.fn().mockReturnValue({ limit });
+            const from = jest.fn().mockReturnValue({ where });
+            (db.select as jest.Mock).mockReturnValue({ from });
 
-            const where = jest.fn().mockReturnValue({
-                limit,
+            await expect(repository.getForRedirect('abc123')).resolves.toEqual({
+                id: 1,
+                fullUrl: 'https://google.com',
+                expired: false,
             });
-
-            const from = jest.fn().mockReturnValue({
-                where,
-            });
-
-            (db.select as jest.Mock).mockReturnValue({
-                from,
-            });
-
-            const result = await repository.getOriginalUrl('abc123');
-
-            expect(where).toHaveBeenCalled();
-            expect(result).toBe('https://google.com');
         });
 
-        it('should return undefined when short code does not exist', async () => {
+        it('returns undefined for an unknown identifier', async () => {
             const limit = jest.fn().mockResolvedValue([]);
+            const where = jest.fn().mockReturnValue({ limit });
+            const from = jest.fn().mockReturnValue({ where });
+            (db.select as jest.Mock).mockReturnValue({ from });
 
-            const where = jest.fn().mockReturnValue({
-                limit,
-            });
-
-            const from = jest.fn().mockReturnValue({
-                where,
-            });
-
-            (db.select as jest.Mock).mockReturnValue({
-                from,
-            });
-
-            const result = await repository.getOriginalUrl('invalid');
-
-            expect(result).toBeUndefined();
+            await expect(
+                repository.getForRedirect('unknown')
+            ).resolves.toBeUndefined();
         });
     });
 
-    describe('addClick', () => {
-        it('should increment clicks for a short url', async () => {
-            const where = jest.fn().mockResolvedValue(undefined);
-
-            const set = jest.fn().mockReturnValue({
-                where,
-            });
-
-            (db.update as jest.Mock).mockReturnValue({
-                set,
-            });
-
-            await repository.addClick('abc123');
-
-            expect(db.update).toHaveBeenCalled();
-            expect(set).toHaveBeenCalled();
-            expect(where).toHaveBeenCalled();
-        });
-    });
-
-    describe('DrizzleShortUrlRepository - getUrlsByUserId', () => {
-        it('should return urls from user', async () => {
+    describe('owned URL queries', () => {
+        it('returns all URLs owned by a user', async () => {
             const urls = [
                 {
                     id: 1,
                     shortUrlCode: 'abc123',
                     fullUrl: 'https://google.com',
-                    clicks: 10,
                     createdAt: new Date(),
                     expiresAt: null,
+                    expired: false,
+                    alias: 'my-link',
                 },
             ];
-
             const where = jest.fn().mockResolvedValue(urls);
+            const from = jest.fn().mockReturnValue({ where });
+            (db.select as jest.Mock).mockReturnValue({ from });
 
-            const from = jest.fn().mockReturnValue({
-                where,
-            });
-
-            (db.select as jest.Mock).mockReturnValue({
-                from,
-            });
-
-            const result = await repository.getUrlsByUserId('user-1');
-
-            expect(db.select).toHaveBeenCalled();
-
-            expect(where).toHaveBeenCalled();
-
-            expect(result).toEqual(urls);
-        });
-
-        it('should return empty array when user has no urls', async () => {
-            const where = jest.fn().mockResolvedValue([]);
-
-            const from = jest.fn().mockReturnValue({
-                where,
-            });
-
-            (db.select as jest.Mock).mockReturnValue({
-                from,
-            });
-
-            const result = await repository.getUrlsByUserId('user-1');
-
-            expect(result).toEqual([]);
-        });
-
-        it('should throw when database fails', async () => {
-            const where = jest
-                .fn()
-                .mockRejectedValue(new Error('Database error'));
-
-            const from = jest.fn().mockReturnValue({
-                where,
-            });
-
-            (db.select as jest.Mock).mockReturnValue({
-                from,
-            });
-
-            await expect(repository.getUrlsByUserId('user-1')).rejects.toThrow(
-                'Database error'
+            await expect(repository.getUrlsByUserId('user-1')).resolves.toEqual(
+                urls
             );
         });
-    });
 
-    describe('findById', () => {
-        it('should return the short url when it exists', async () => {
+        it('finds one URL by owner and id', async () => {
             const url = {
                 id: 1,
                 shortUrlCode: 'abc123',
                 fullUrl: 'https://google.com',
-                clicks: 10,
                 createdAt: new Date(),
                 expiresAt: null,
+                expired: false,
+                alias: null,
             };
-
             const limit = jest.fn().mockResolvedValue([url]);
+            const where = jest.fn().mockReturnValue({ limit });
+            const from = jest.fn().mockReturnValue({ where });
+            (db.select as jest.Mock).mockReturnValue({ from });
 
-            const where = jest.fn().mockReturnValue({
-                limit,
-            });
-
-            const from = jest.fn().mockReturnValue({
-                where,
-            });
-
-            (db.select as jest.Mock).mockReturnValue({
-                from,
-            });
-
-            const result = await repository.findById(1);
-
-            expect(db.select).toHaveBeenCalled();
-            expect(where).toHaveBeenCalled();
-            expect(limit).toHaveBeenCalledWith(1);
-            expect(result).toEqual(url);
-        });
-
-        it('should return undefined when short url does not exist', async () => {
-            const limit = jest.fn().mockResolvedValue([]);
-
-            const where = jest.fn().mockReturnValue({
-                limit,
-            });
-
-            const from = jest.fn().mockReturnValue({
-                where,
-            });
-
-            (db.select as jest.Mock).mockReturnValue({
-                from,
-            });
-
-            const result = await repository.findById(1);
-
-            expect(result).toBeUndefined();
+            await expect(repository.findById(1, 'user-1')).resolves.toEqual(
+                url
+            );
         });
     });
 
-    describe('update', () => {
-        it('should update and return the updated short url', async () => {
+    describe('mutations', () => {
+        it('updates and returns an owned URL atomically', async () => {
             const updatedUrl = {
                 id: 1,
                 shortUrlCode: 'abc123',
-                fullUrl: 'https://google.com',
-                clicks: 20,
+                fullUrl: 'https://github.com',
                 createdAt: new Date(),
                 expiresAt: null,
+                expired: false,
+                alias: null,
             };
+            const returning = jest.fn().mockResolvedValue([updatedUrl]);
+            const where = jest.fn().mockReturnValue({ returning });
+            const set = jest.fn().mockReturnValue({ where });
+            (db.update as jest.Mock).mockReturnValue({ set });
 
-            const where = jest.fn().mockResolvedValue(undefined);
-
-            const set = jest.fn().mockReturnValue({
-                where,
-            });
-
-            (db.update as jest.Mock).mockReturnValue({
-                set,
-            });
-
-            jest.spyOn(repository, 'findById').mockResolvedValue(updatedUrl);
-
-            const result = await repository.update(1, updatedUrl);
-
-            expect(db.update).toHaveBeenCalled();
-            expect(set).toHaveBeenCalledWith({
-                fullUrl: updatedUrl.fullUrl,
-                expiresAt: updatedUrl.expiresAt,
-            });
-
-            expect(repository.findById).toHaveBeenCalledWith(1);
-            expect(result).toEqual(updatedUrl);
+            await expect(
+                repository.update(1, 'user-1', {
+                    fullUrl: 'https://github.com',
+                })
+            ).resolves.toEqual(updatedUrl);
         });
-    });
 
-    describe('delete', () => {
-        it('should delete the short url', async () => {
-            const where = jest.fn().mockResolvedValue(undefined);
+        it('reports whether an owned URL was deleted', async () => {
+            const returning = jest.fn().mockResolvedValue([{ id: 1 }]);
+            const where = jest.fn().mockReturnValue({ returning });
+            (db.delete as jest.Mock).mockReturnValue({ where });
 
-            (db.delete as jest.Mock).mockReturnValue({
-                where,
+            await expect(repository.delete(1, 'user-1')).resolves.toBe(true);
+        });
+
+        it('reports whether an alias was assigned', async () => {
+            const returning = jest.fn().mockResolvedValue([{ id: 1 }]);
+            const where = jest.fn().mockReturnValue({ returning });
+            const set = jest.fn().mockReturnValue({ where });
+            (db.update as jest.Mock).mockReturnValue({ set });
+
+            await expect(
+                repository.addAlias(1, 'my-link', 'user-1')
+            ).resolves.toBe(true);
+        });
+
+        it('maps identifier uniqueness violations to a conflict error', async () => {
+            const databaseError = Object.assign(new Error('duplicate key'), {
+                code: '23505',
             });
+            const returning = jest.fn().mockRejectedValue(databaseError);
+            const where = jest.fn().mockReturnValue({ returning });
+            const set = jest.fn().mockReturnValue({ where });
+            (db.update as jest.Mock).mockReturnValue({ set });
 
-            await repository.delete(1);
-
-            expect(db.delete).toHaveBeenCalled();
-            expect(where).toHaveBeenCalled();
+            await expect(
+                repository.addAlias(1, 'existing', 'user-1')
+            ).rejects.toBeInstanceOf(UrlIdentifierAlreadyExistsError);
         });
     });
 });

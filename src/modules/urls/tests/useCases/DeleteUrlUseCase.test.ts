@@ -14,16 +14,26 @@ describe('DeleteUrlUseCase', () => {
     });
 
     it('should delete the url', async () => {
-        repository.delete.mockResolvedValue(undefined);
+        repository.delete.mockResolvedValue(true);
 
-        await useCase.execute(1);
+        await useCase.execute(1, 'user-1');
 
-        expect(repository.delete).toHaveBeenCalledWith(1);
+        expect(repository.delete).toHaveBeenCalledWith(1, 'user-1');
+    });
+
+    it('throws when no owned URL is deleted', async () => {
+        repository.delete.mockResolvedValue(false);
+
+        await expect(useCase.execute(1, 'user-1')).rejects.toThrow(
+            'URL não encontrada'
+        );
     });
 
     it('should throw when repository fails', async () => {
         repository.delete.mockRejectedValue(new Error('Database error'));
 
-        await expect(useCase.execute(1)).rejects.toThrow('Database error');
+        await expect(useCase.execute(1, 'user-1')).rejects.toThrow(
+            'Database error'
+        );
     });
 });

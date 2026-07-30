@@ -1,29 +1,32 @@
 import { Request, Response } from 'express';
 import { CreateShortUrlUseCase } from '@modules/urls/useCases/CreateShortUrlUseCase';
+import { z } from 'zod';
+
+const createShortUrlSchema = z.object({
+    fullUrl: z.string().min(1),
+});
 
 export class CreateShortUrlController {
     constructor(private createShortUrlUseCase: CreateShortUrlUseCase) {}
 
     async handle(req: Request, res: Response): Promise<Response> {
-        const { fullUrl, userId } = req.body;
+        const body = createShortUrlSchema.safeParse(req.body);
+        const userId = req.user?.userId;
 
-        if (!fullUrl) {
+        if (!body.success) {
             return res.status(400).json({ error: 'URL is required' });
         }
 
         if (!userId) {
-            return res.status(400).json({ error: 'User ID is required' });
+            return res
+                .status(401)
+                .json({ error: 'User authentication is required' });
         }
 
-        try {
-            const shortUrlCode = await this.createShortUrlUseCase.execute({
-                fullUrl,
-                userId,
-            });
-            return res.status(201).json({ shortUrlCode });
-        } catch (error) {
-            console.error(error);
-            return res.status(500).json({ error: 'Internal server error' });
-        }
+        const shortUrlCode = await this.createShortUrlUseCase.execute({
+            fullUrl: body.data.fullUrl,
+            userId,
+        });
+        return res.status(201).json({ shortUrlCode });
     }
 }

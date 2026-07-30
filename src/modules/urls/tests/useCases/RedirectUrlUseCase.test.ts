@@ -7,45 +7,71 @@ describe('RedirectUrlUseCase', () => {
 
     beforeEach(() => {
         repository = {
-            getOriginalUrl: jest.fn(),
-            addClick: jest.fn(),
+            getForRedirect: jest.fn(),
         } as unknown as jest.Mocked<ShortUrlRepository>;
 
         useCase = new RedirectUrlUseCase(repository);
     });
 
-    it('should return the original url and increment clicks', async () => {
-        repository.getOriginalUrl.mockResolvedValue('https://google.com');
-        repository.addClick.mockResolvedValue();
+    it('should return the redirect data when the url exists', async () => {
+        repository.getForRedirect.mockResolvedValue({
+            id: 1,
+            fullUrl: 'https://google.com',
+            expired: false,
+        });
 
         const result = await useCase.redirect('abc123');
 
-        expect(repository.getOriginalUrl).toHaveBeenCalledWith('abc123');
-
-        expect(repository.addClick).toHaveBeenCalledWith('abc123');
-
-        expect(result).toBe('https://google.com');
+        expect(repository.getForRedirect).toHaveBeenCalledWith('abc123');
+        expect(result).toEqual({
+            id: 1,
+            fullUrl: 'https://google.com',
+            expired: false,
+        });
     });
 
-    it('should return undefined when url does not exist', async () => {
-        repository.getOriginalUrl.mockResolvedValue(undefined);
+    it('should redirect using an alias', async () => {
+        repository.getForRedirect.mockResolvedValue({
+            id: 1,
+            fullUrl: 'https://google.com',
+            expired: false,
+        });
 
-        const result = await useCase.redirect('invalid-code');
+        const result = await useCase.redirect('my-link');
 
-        expect(repository.getOriginalUrl).toHaveBeenCalledWith('invalid-code');
+        expect(repository.getForRedirect).toHaveBeenCalledWith('my-link');
+        expect(result.fullUrl).toBe('https://google.com');
+    });
 
-        expect(repository.addClick).not.toHaveBeenCalled();
+    it('should throw when url does not exist', async () => {
+        repository.getForRedirect.mockResolvedValue(undefined);
 
-        expect(result).toBeUndefined();
+        await expect(useCase.redirect('invalid-code')).rejects.toThrow(
+            'URL não encontrada'
+        );
+
+        expect(repository.getForRedirect).toHaveBeenCalledWith('invalid-code');
     });
 
     it('should throw when repository fails', async () => {
-        repository.getOriginalUrl.mockRejectedValue(
+        repository.getForRedirect.mockRejectedValue(
             new Error('Database error')
         );
 
         await expect(useCase.redirect('abc123')).rejects.toThrow(
             'Database error'
+        );
+    });
+
+    it('should block an expired url', async () => {
+        repository.getForRedirect.mockResolvedValue({
+            id: 1,
+            fullUrl: 'https://google.com',
+            expired: true,
+        });
+
+        await expect(useCase.redirect('expired-code')).rejects.toThrow(
+            'URL expirada'
         );
     });
 });

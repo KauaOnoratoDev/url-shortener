@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { UpdateUrlController } from '@modules/urls/controllers/UpdateUrlController';
 import { UpdateUrlUseCase } from '@modules/urls/useCases/UpdateUrlUseCase';
+import { UrlNotFoundError } from '@shared/errors/UrlNotFoundError';
 
 describe('UpdateUrlController', () => {
     let updateUrlUseCase: jest.Mocked<UpdateUrlUseCase>;
@@ -29,15 +30,15 @@ describe('UpdateUrlController', () => {
             },
             body: {
                 fullUrl: 'https://github.com',
-                expiresAt: null,
+                expiresAt: new Date('2030-01-01'),
             },
+            user: { userId: 'user-1', tokenType: 'access' },
         };
 
         const updatedUrl = {
             id: 1,
             shortUrlCode: 'abc123',
             fullUrl: 'https://github.com',
-            clicks: 10,
             createdAt: new Date(),
             expiresAt: null,
         };
@@ -46,65 +47,50 @@ describe('UpdateUrlController', () => {
 
         await controller.handle(req as Request, res as Response);
 
-        expect(updateUrlUseCase.execute).toHaveBeenCalledWith(1, {
+        expect(updateUrlUseCase.execute).toHaveBeenCalledWith(1, 'user-1', {
             fullUrl: 'https://github.com',
-            expiresAt: null,
         });
 
         expect(res.status).toHaveBeenCalledWith(200);
         expect(res.json).toHaveBeenCalledWith(updatedUrl);
     });
 
-    it('should return 404 when url does not exist', async () => {
+    it('should propagate error when url does not exist', async () => {
         req = {
             params: {
                 id: '1',
             },
             body: {
                 fullUrl: 'https://github.com',
-                expiresAt: null,
+                expiresAt: new Date('2030-01-01'),
             },
+            user: { userId: 'user-1', tokenType: 'access' },
         };
 
-        updateUrlUseCase.execute.mockResolvedValue(undefined);
+        updateUrlUseCase.execute.mockRejectedValue(new UrlNotFoundError());
 
-        await controller.handle(req as Request, res as Response);
+        await expect(
+            controller.handle(req as Request, res as Response)
+        ).rejects.toThrow('URL não encontrada');
 
-        expect(updateUrlUseCase.execute).toHaveBeenCalledWith(1, {
+        expect(updateUrlUseCase.execute).toHaveBeenCalledWith(1, 'user-1', {
             fullUrl: 'https://github.com',
-            expiresAt: null,
-        });
-
-        expect(res.status).toHaveBeenCalledWith(404);
-        expect(res.json).toHaveBeenCalledWith({
-            error: 'URL not found',
         });
     });
 
-    it('should return 500 when use case throws an error', async () => {
+    it.each([
+        [{ id: 'not-a-number' }, { fullUrl: 'https://example.com' }],
+        [{ id: '1' }, null],
+    ])('rejects invalid route or body input', async (params, body) => {
         req = {
-            params: {
-                id: '1',
-            },
-            body: {
-                fullUrl: 'https://github.com',
-                expiresAt: null,
-            },
+            params,
+            body,
+            user: { userId: 'user-1', tokenType: 'access' },
         };
-
-        updateUrlUseCase.execute.mockRejectedValue(new Error('Database error'));
-
-        const consoleSpy = jest
-            .spyOn(console, 'error')
-            .mockImplementation(() => {});
 
         await controller.handle(req as Request, res as Response);
 
-        expect(res.status).toHaveBeenCalledWith(500);
-        expect(res.json).toHaveBeenCalledWith({
-            error: 'Internal server error',
-        });
-
-        consoleSpy.mockRestore();
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(updateUrlUseCase.execute).not.toHaveBeenCalled();
     });
 });

@@ -1,30 +1,47 @@
-import { integer, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import {
+    boolean,
+    index,
+    integer,
+    pgTable,
+    text,
+    timestamp,
+    uniqueIndex,
+} from 'drizzle-orm/pg-core';
 
 import { usersTable } from './users';
 
-export const shortUrlsTable = pgTable('short_urls', {
-    id: integer().primaryKey().generatedAlwaysAsIdentity(),
+export const shortUrlsTable = pgTable(
+    'short_urls',
+    {
+        id: integer().primaryKey().generatedAlwaysAsIdentity(),
 
-    shortUrlCode: text().unique(),
+        shortUrlCode: text().unique(),
 
-    fullUrl: text().notNull(),
+        fullUrl: text().notNull(),
 
-    clicks: integer().default(0).notNull(),
+        userId: text()
+            .notNull()
+            .references(() => usersTable.id, {
+                onDelete: 'cascade',
+                onUpdate: 'cascade',
+            }),
 
-    userId: text()
-        .notNull()
-        .references(() => usersTable.id, {
-            onDelete: 'cascade',
-            onUpdate: 'cascade',
+        createdAt: timestamp({
+            withTimezone: true,
+        })
+            .defaultNow()
+            .notNull(),
+
+        expiresAt: timestamp({
+            withTimezone: true,
         }),
 
-    createdAt: timestamp({
-        withTimezone: true,
-    })
-        .defaultNow()
-        .notNull(),
+        expired: boolean().default(false).notNull(),
 
-    expiresAt: timestamp({
-        withTimezone: true,
-    }),
-});
+        alias: text(),
+    },
+    (table) => [
+        index('short_urls_user_id_idx').on(table.userId),
+        uniqueIndex('short_urls_alias_unique_idx').on(table.alias),
+    ]
+);

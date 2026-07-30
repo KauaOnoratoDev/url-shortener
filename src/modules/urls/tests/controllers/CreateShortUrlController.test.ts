@@ -39,7 +39,19 @@ describe('CreateShortUrlController', () => {
         expect(createShortUrlUseCase.execute).not.toHaveBeenCalled();
     });
 
-    it('should return 400 if userId is not provided', async () => {
+    it('returns 400 for a null JSON body instead of throwing a TypeError', async () => {
+        req = {
+            body: null,
+            user: { userId: 'user-1', tokenType: 'access' },
+        };
+
+        await controller.handle(req as Request, res as Response);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(createShortUrlUseCase.execute).not.toHaveBeenCalled();
+    });
+
+    it('should return 401 if the request is not authenticated', async () => {
         req = {
             body: {
                 fullUrl: 'https://google.com',
@@ -48,9 +60,9 @@ describe('CreateShortUrlController', () => {
 
         await controller.handle(req as Request, res as Response);
 
-        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.status).toHaveBeenCalledWith(401);
         expect(res.json).toHaveBeenCalledWith({
-            error: 'User ID is required',
+            error: 'User authentication is required',
         });
 
         expect(createShortUrlUseCase.execute).not.toHaveBeenCalled();
@@ -60,8 +72,8 @@ describe('CreateShortUrlController', () => {
         req = {
             body: {
                 fullUrl: 'https://google.com',
-                userId: 'user-1',
             },
+            user: { userId: 'user-1', tokenType: 'access' },
         };
 
         createShortUrlUseCase.execute.mockResolvedValue('abc123');
@@ -79,31 +91,22 @@ describe('CreateShortUrlController', () => {
         });
     });
 
-    it('should return 500 when use case throws an error', async () => {
+    it('should propagate unexpected errors from use case', async () => {
         req = {
             body: {
                 fullUrl: 'https://google.com',
-                userId: 'user-1',
             },
+            user: { userId: 'user-1', tokenType: 'access' },
         };
 
         createShortUrlUseCase.execute.mockRejectedValue(
             new Error('Unexpected error')
         );
 
-        const consoleSpy = jest
-            .spyOn(console, 'error')
-            .mockImplementation(() => {});
-
-        await controller.handle(req as Request, res as Response);
+        await expect(
+            controller.handle(req as Request, res as Response)
+        ).rejects.toThrow('Unexpected error');
 
         expect(createShortUrlUseCase.execute).toHaveBeenCalled();
-
-        expect(res.status).toHaveBeenCalledWith(500);
-        expect(res.json).toHaveBeenCalledWith({
-            error: 'Internal server error',
-        });
-
-        consoleSpy.mockRestore();
     });
 });

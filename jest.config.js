@@ -3,6 +3,7 @@ export default {
     clearMocks: true,
     resetMocks: true,
     restoreMocks: true,
+    testPathIgnorePatterns: ['<rootDir>/dist/'],
     transform: {
         '^.+\\.tsx?$': ['@swc/jest'],
     },

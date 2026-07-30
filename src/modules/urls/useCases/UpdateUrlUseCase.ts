@@ -1,24 +1,29 @@
-import { UpdateShortUrlDTO } from '@modules/urls/DTOs';
+import { ShortUrlResponseDTO, UpdateShortUrlDTO } from '@modules/urls/DTOs';
 import { ShortUrlRepository } from '@modules/urls/repositories/ShortUrlRepository';
+import { UrlNotFoundError } from '@shared/errors/UrlNotFoundError';
+import { ValidateUrlProvider } from '@shared/providers/ValidateUrlProvider';
 
 export class UpdateUrlUseCase {
-    constructor(private shortUrlRepository: ShortUrlRepository) {}
+    constructor(
+        private shortUrlRepository: ShortUrlRepository,
+        private validateUrlProvider: ValidateUrlProvider
+    ) {}
 
-    async execute(id: number, { fullUrl, expiresAt }: UpdateShortUrlDTO) {
-        const url = await this.shortUrlRepository.findById(id);
+    async execute(
+        id: number,
+        userId: string,
+        { fullUrl }: UpdateShortUrlDTO
+    ): Promise<ShortUrlResponseDTO> {
+        this.validateUrlProvider.validate(fullUrl);
+
+        const url = await this.shortUrlRepository.update(id, userId, {
+            fullUrl,
+        });
 
         if (!url) {
-            return undefined;
+            throw new UrlNotFoundError();
         }
 
-        if (fullUrl) {
-            url.fullUrl = fullUrl;
-        }
-
-        if (expiresAt) {
-            url.expiresAt = expiresAt;
-        }
-
-        return this.shortUrlRepository.update(id, url);
+        return url;
     }
 }

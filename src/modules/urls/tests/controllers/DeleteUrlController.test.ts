@@ -28,37 +28,44 @@ describe('DeleteUrlController', () => {
             params: {
                 id: '1',
             },
+            user: { userId: 'user-1', tokenType: 'access' },
         };
 
         deleteUrlUseCase.execute.mockResolvedValue(undefined);
 
         await controller.handle(req as Request, res as Response);
 
-        expect(deleteUrlUseCase.execute).toHaveBeenCalledWith(1);
+        expect(deleteUrlUseCase.execute).toHaveBeenCalledWith(1, 'user-1');
         expect(res.status).toHaveBeenCalledWith(204);
         expect(res.send).toHaveBeenCalled();
     });
 
-    it('should return 500 when use case throws an error', async () => {
+    it('should propagate errors from use case', async () => {
         req = {
             params: {
                 id: '1',
             },
+            user: { userId: 'user-1', tokenType: 'access' },
         };
 
         deleteUrlUseCase.execute.mockRejectedValue(new Error('Database error'));
 
-        const consoleSpy = jest
-            .spyOn(console, 'error')
-            .mockImplementation(() => {});
+        await expect(
+            controller.handle(req as Request, res as Response)
+        ).rejects.toThrow('Database error');
+
+        expect(deleteUrlUseCase.execute).toHaveBeenCalledWith(1, 'user-1');
+    });
+
+    it('rejects a non-numeric id before accessing the use case', async () => {
+        req = {
+            params: { id: 'invalid' },
+            user: { userId: 'user-1', tokenType: 'access' },
+        };
 
         await controller.handle(req as Request, res as Response);
 
-        expect(res.status).toHaveBeenCalledWith(500);
-        expect(res.json).toHaveBeenCalledWith({
-            error: 'Internal server error',
-        });
-
-        consoleSpy.mockRestore();
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(deleteUrlUseCase.execute).not.toHaveBeenCalled();
     });
 });
