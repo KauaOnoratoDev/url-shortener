@@ -8,7 +8,7 @@ const router = Router();
 router.use('/urls', urlRoutes);
 router.use('/users', userRouter);
 
-router.get('/r/:shortUrlCode', (req, res) =>
+router.get('/:shortUrlCode', (req, res) =>
     makeRedirectUrlController().handle(req, res)
 );
 
