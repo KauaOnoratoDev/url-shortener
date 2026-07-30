@@ -8,15 +8,14 @@
         "strict": true,
         "skipLibCheck": true,
         "esModuleInterop": true,
-        "ignoreDeprecations": "6.0",
+        "ignoreDeprecations": "5.0",
         "types": ["node", "jest"],
-        "baseUrl": "./",
         "paths": {
-            "@core/*": ["src/core/*"],
-            "@modules/*": ["src/modules/*"],
-            "@shared/*": ["src/shared/*"],
-            "@infra/*": ["src/shared/infra/*"],
-            "@providers/*": ["src/shared/providers/*"]
+            "@core/*": ["./src/core/*"],
+            "@modules/*": ["./src/modules/*"],
+            "@shared/*": ["./src/shared/*"],
+            "@infra/*": ["./src/shared/infra/*"],
+            "@providers/*": ["./src/shared/providers/*"]
         }
     },
     "include": ["src"]
