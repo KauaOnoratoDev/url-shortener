@@ -22,8 +22,6 @@ describe('GetUrlAnalyticsController', () => {
     it('should return paginated analytics', async () => {
         const analytics = {
             totalAccesses: 1,
-            trackedAccesses: 1,
-            legacyAccesses: 0,
             history: { items: [], page: 2, limit: 10, total: 1 },
             distribution: {
                 browsers: [],

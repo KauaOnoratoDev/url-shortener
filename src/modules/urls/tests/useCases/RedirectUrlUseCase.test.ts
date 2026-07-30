@@ -63,7 +63,7 @@ describe('RedirectUrlUseCase', () => {
         );
     });
 
-    it('should block an expired url without incrementing clicks', async () => {
+    it('should block an expired url', async () => {
         repository.getForRedirect.mockResolvedValue({
             id: 1,
             fullUrl: 'https://google.com',

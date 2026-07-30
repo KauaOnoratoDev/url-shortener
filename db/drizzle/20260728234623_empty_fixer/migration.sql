@@ -11,7 +11,6 @@ CREATE TABLE "short_urls" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "short_urls_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"shortUrlCode" text UNIQUE,
 	"fullUrl" text NOT NULL,
-	"clicks" integer DEFAULT 0 NOT NULL,
 	"userId" text NOT NULL,
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
 	"expiresAt" timestamp with time zone

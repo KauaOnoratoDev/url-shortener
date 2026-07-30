@@ -68,13 +68,6 @@ describe('DrizzleUrlAccessRepository', () => {
             .mockReturnValueOnce({
                 from: jest.fn().mockReturnValue({
                     where: jest.fn().mockReturnValue({
-                        limit: jest.fn().mockResolvedValue([{ count: 3 }]),
-                    }),
-                }),
-            })
-            .mockReturnValueOnce({
-                from: jest.fn().mockReturnValue({
-                    where: jest.fn().mockReturnValue({
                         orderBy: jest.fn().mockReturnValue({
                             limit: jest.fn().mockReturnValue({
                                 offset: jest
@@ -120,9 +113,7 @@ describe('DrizzleUrlAccessRepository', () => {
         const result = await repository.getAnalytics(1, 1, 25);
 
         expect(result).toEqual({
-            totalAccesses: 5,
-            trackedAccesses: 2,
-            legacyAccesses: 3,
+            totalAccesses: 2,
             history: {
                 items: [historyItem],
                 page: 1,

@@ -30,9 +30,7 @@ describe('GetUrlAnalyticsUseCase', () => {
             expiresAt: null,
         });
         const analytics = {
-            totalAccesses: 2,
-            trackedAccesses: 1,
-            legacyAccesses: 1,
+            totalAccesses: 1,
             history: { items: [], page: 1, limit: 25, total: 1 },
             distribution: {
                 browsers: [],

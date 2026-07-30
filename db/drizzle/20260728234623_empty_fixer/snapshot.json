@@ -149,19 +149,6 @@
             "table": "short_urls"
         },
         {
-            "type": "integer",
-            "typeSchema": null,
-            "notNull": true,
-            "dimensions": 0,
-            "default": "0",
-            "generated": null,
-            "identity": null,
-            "name": "clicks",
-            "entityType": "columns",
-            "schema": "public",
-            "table": "short_urls"
-        },
-        {
             "type": "text",
             "typeSchema": null,
             "notNull": true,

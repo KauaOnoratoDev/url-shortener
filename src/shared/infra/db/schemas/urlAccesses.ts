@@ -1,14 +1,11 @@
 import {
-    check,
     index,
     integer,
     pgEnum,
     pgTable,
     timestamp,
-    uniqueIndex,
     varchar,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 
 import { shortUrlsTable } from './shortUrls';
 
@@ -71,31 +68,6 @@ export const urlAccessesTable = pgTable(
             table.country,
             table.state,
             table.city
-        ),
-    ]
-);
-
-export const urlAnalyticsLegacyTable = pgTable(
-    'url_analytics_legacy',
-    {
-        id: integer().primaryKey().generatedAlwaysAsIdentity(),
-
-        shortUrlId: integer()
-            .notNull()
-            .references(() => shortUrlsTable.id, {
-                onDelete: 'cascade',
-                onUpdate: 'cascade',
-            }),
-
-        accessCount: integer().notNull(),
-    },
-    (table) => [
-        check(
-            'url_analytics_legacy_access_count_check',
-            sql`${table.accessCount} >= 0`
-        ),
-        uniqueIndex('url_analytics_legacy_short_url_id_idx').on(
-            table.shortUrlId
         ),
     ]
 );

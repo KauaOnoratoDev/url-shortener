@@ -11,10 +11,9 @@ GET /urls/:id/analytics?page=1&limit=25
 ```
 
 The response contains the total and paginated access history, plus
-distributions by browser, operating system, device type and location. Totals
-collected before the analytics migration are preserved as `legacyAccesses`;
-because their original metadata did not exist, they are not included in the
-history or distributions.
+distributions by browser, operating system, device type and location. All
+analytics are calculated from the individual accesses stored by the
+application.
 
 IP addresses are not stored. Approximate location can be read from Cloudflare
 or Vercel location headers by setting `ANALYTICS_TRUST_GEO_HEADERS=true`. Only

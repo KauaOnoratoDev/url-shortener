@@ -8,10 +8,7 @@ import {
 } from '@modules/analytics/DTOs';
 import { UrlAccess } from '@modules/analytics/models/UrlAccess';
 import { UrlAccessRepository } from '@modules/analytics/repositories/UrlAccessRepository';
-import {
-    urlAccessesTable as accesses,
-    urlAnalyticsLegacyTable as legacy,
-} from '@shared/infra/db/schemas/urlAccesses';
+import { urlAccessesTable as accesses } from '@shared/infra/db/schemas/urlAccesses';
 
 export class DrizzleUrlAccessRepository implements UrlAccessRepository {
     constructor(private db: NodePgDatabase) {}
@@ -37,8 +34,7 @@ export class DrizzleUrlAccessRepository implements UrlAccessRepository {
         const offset = (page - 1) * limit;
 
         const [
-            trackedResult,
-            legacyResult,
+            totalResult,
             history,
             browsers,
             operatingSystems,
@@ -49,11 +45,6 @@ export class DrizzleUrlAccessRepository implements UrlAccessRepository {
                 .select({ count: count() })
                 .from(accesses)
                 .where(eq(accesses.shortUrlId, shortUrlId)),
-            this.db
-                .select({ count: legacy.accessCount })
-                .from(legacy)
-                .where(eq(legacy.shortUrlId, shortUrlId))
-                .limit(1),
             this.db
                 .select({
                     id: accesses.id,
@@ -87,18 +78,15 @@ export class DrizzleUrlAccessRepository implements UrlAccessRepository {
                 .orderBy(sql`count(*) desc`),
         ]);
 
-        const trackedAccesses = trackedResult[0]?.count ?? 0;
-        const legacyAccesses = legacyResult[0]?.count ?? 0;
+        const totalAccesses = totalResult[0]?.count ?? 0;
 
         return {
-            totalAccesses: trackedAccesses + legacyAccesses,
-            trackedAccesses,
-            legacyAccesses,
+            totalAccesses,
             history: {
                 items: history,
                 page,
                 limit,
-                total: trackedAccesses,
+                total: totalAccesses,
             },
             distribution: {
                 browsers,

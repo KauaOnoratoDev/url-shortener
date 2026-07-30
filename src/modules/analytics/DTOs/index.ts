@@ -34,8 +34,6 @@ export interface GeographicDistributionItem extends GeoLocation {
 
 export interface UrlAnalyticsResponseDTO {
     totalAccesses: number;
-    trackedAccesses: number;
-    legacyAccesses: number;
     history: {
         items: UrlAccessHistoryItem[];
         page: number;
