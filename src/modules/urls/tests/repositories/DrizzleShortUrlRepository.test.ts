@@ -88,6 +88,7 @@ describe('DrizzleShortUrlRepository', () => {
         it('should return original url when short code exists', async () => {
             const limit = jest.fn().mockResolvedValue([
                 {
+                    id: 1,
                     fullUrl: 'https://google.com',
                     expired: false,
                 },
@@ -113,6 +114,7 @@ describe('DrizzleShortUrlRepository', () => {
 
             expect(where).toHaveBeenCalled();
             expect(result).toEqual({
+                id: 1,
                 fullUrl: 'https://google.com',
                 expired: false,
             });
@@ -143,26 +145,6 @@ describe('DrizzleShortUrlRepository', () => {
         });
     });
 
-    describe('addClick', () => {
-        it('should increment clicks for a short url', async () => {
-            const where = jest.fn().mockResolvedValue(undefined);
-
-            const set = jest.fn().mockReturnValue({
-                where,
-            });
-
-            (db.update as jest.Mock).mockReturnValue({
-                set,
-            });
-
-            await repository.addClick('abc123');
-
-            expect(db.update).toHaveBeenCalled();
-            expect(set).toHaveBeenCalled();
-            expect(where).toHaveBeenCalled();
-        });
-    });
-
     describe('DrizzleShortUrlRepository - getUrlsByUserId', () => {
         it('should return urls from user', async () => {
             const urls = [
@@ -170,7 +152,6 @@ describe('DrizzleShortUrlRepository', () => {
                     id: 1,
                     shortUrlCode: 'abc123',
                     fullUrl: 'https://google.com',
-                    clicks: 10,
                     createdAt: new Date(),
                     expiresAt: null,
                     alias: 'my-link',
@@ -237,7 +218,6 @@ describe('DrizzleShortUrlRepository', () => {
                 id: 1,
                 shortUrlCode: 'abc123',
                 fullUrl: 'https://google.com',
-                clicks: 10,
                 createdAt: new Date(),
                 expiresAt: null,
                 alias: 'my-link',
@@ -292,7 +272,6 @@ describe('DrizzleShortUrlRepository', () => {
                 id: 1,
                 shortUrlCode: 'abc123',
                 fullUrl: 'https://google.com',
-                clicks: 20,
                 createdAt: new Date(),
                 expiresAt: null,
             };

@@ -19,7 +19,6 @@ describe('AddAliasUrlUseCase', () => {
             id: 1,
             shortUrlCode: 'abc123',
             fullUrl: 'https://google.com',
-            clicks: 0,
             createdAt: new Date(),
             expiresAt: null,
         });

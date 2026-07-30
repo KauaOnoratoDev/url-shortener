@@ -16,7 +16,6 @@ describe('CreateShortUrlUseCase', () => {
             updateShortUrlCode: jest.fn(),
             updateShortUrlExpiresAt: jest.fn(),
             getOriginalUrl: jest.fn(),
-            addClick: jest.fn(),
             getUrlsByUserId: jest.fn(),
         } as unknown as jest.Mocked<ShortUrlRepository>;
 

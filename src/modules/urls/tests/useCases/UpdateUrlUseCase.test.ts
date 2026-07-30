@@ -19,7 +19,6 @@ describe('UpdateUrlUseCase', () => {
             id: 1,
             shortUrlCode: 'abc123',
             fullUrl: 'https://google.com',
-            clicks: 10,
             createdAt: new Date(),
             expiresAt: null,
         };
@@ -72,7 +71,6 @@ describe('UpdateUrlUseCase', () => {
             id: 1,
             shortUrlCode: 'abc123',
             fullUrl: 'https://google.com',
-            clicks: 10,
             createdAt: new Date(),
             expiresAt: null,
         };

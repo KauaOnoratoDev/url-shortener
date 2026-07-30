@@ -12,7 +12,6 @@ export interface ShortUrlRepository {
     getForRedirect(
         shortUrlCode: string
     ): Promise<ShortUrlRedirectDTO | undefined>;
-    addClick(shortUrlCode: string): Promise<void>;
     getUrlsByUserId(userId: string): Promise<ShortUrlResponseDTO[]>;
     findById(
         id: number,

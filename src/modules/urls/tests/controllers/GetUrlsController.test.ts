@@ -49,7 +49,6 @@ describe('GetUrlsController', () => {
                 id: 1,
                 shortUrlCode: 'abc123',
                 fullUrl: 'https://google.com',
-                clicks: 10,
                 createdAt: new Date('2026-07-26T12:00:00Z'),
                 expiresAt: null,
             },

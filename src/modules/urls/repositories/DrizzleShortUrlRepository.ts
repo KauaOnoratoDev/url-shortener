@@ -1,4 +1,4 @@
-import { and, eq, lt, or, sql } from 'drizzle-orm';
+import { and, eq, lt, or } from 'drizzle-orm';
 import { ShortUrlRepository } from '@modules/urls/repositories/ShortUrlRepository';
 import { shortUrlsTable as urls } from '@shared/infra/db/schemas/shortUrls';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -67,7 +67,11 @@ export class DrizzleShortUrlRepository implements ShortUrlRepository {
             );
 
         const result = await this.db
-            .select({ fullUrl: urls.fullUrl, expired: urls.expired })
+            .select({
+                id: urls.id,
+                fullUrl: urls.fullUrl,
+                expired: urls.expired,
+            })
             .from(urls)
             .where(
                 or(
@@ -84,27 +88,12 @@ export class DrizzleShortUrlRepository implements ShortUrlRepository {
         return result[0];
     }
 
-    async addClick(shortUrlCode: string): Promise<void> {
-        await this.db
-            .update(urls)
-            .set({
-                clicks: sql`${urls.clicks} + 1`,
-            })
-            .where(
-                or(
-                    eq(urls.shortUrlCode, shortUrlCode),
-                    eq(urls.alias, shortUrlCode)
-                )
-            );
-    }
-
     async getUrlsByUserId(userId: string): Promise<ShortUrlResponseDTO[]> {
         const result = await this.db
             .select({
                 id: urls.id,
                 shortUrlCode: urls.shortUrlCode,
                 fullUrl: urls.fullUrl,
-                clicks: urls.clicks,
                 createdAt: urls.createdAt,
                 expiresAt: urls.expiresAt,
                 expired: urls.expired,
@@ -125,7 +114,6 @@ export class DrizzleShortUrlRepository implements ShortUrlRepository {
                 id: urls.id,
                 shortUrlCode: urls.shortUrlCode,
                 fullUrl: urls.fullUrl,
-                clicks: urls.clicks,
                 createdAt: urls.createdAt,
                 expiresAt: urls.expiresAt,
                 expired: urls.expired,

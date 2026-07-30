@@ -8,40 +8,39 @@ describe('RedirectUrlUseCase', () => {
     beforeEach(() => {
         repository = {
             getForRedirect: jest.fn(),
-            addClick: jest.fn(),
         } as unknown as jest.Mocked<ShortUrlRepository>;
 
         useCase = new RedirectUrlUseCase(repository);
     });
 
-    it('should return the original url and increment clicks', async () => {
+    it('should return the redirect data when the url exists', async () => {
         repository.getForRedirect.mockResolvedValue({
+            id: 1,
             fullUrl: 'https://google.com',
             expired: false,
         });
-        repository.addClick.mockResolvedValue();
 
         const result = await useCase.redirect('abc123');
 
         expect(repository.getForRedirect).toHaveBeenCalledWith('abc123');
-
-        expect(repository.addClick).toHaveBeenCalledWith('abc123');
-
-        expect(result).toBe('https://google.com');
-    });
-
-    it('should redirect using an alias and increment clicks with that alias', async () => {
-        repository.getForRedirect.mockResolvedValue({
+        expect(result).toEqual({
+            id: 1,
             fullUrl: 'https://google.com',
             expired: false,
         });
-        repository.addClick.mockResolvedValue();
+    });
+
+    it('should redirect using an alias', async () => {
+        repository.getForRedirect.mockResolvedValue({
+            id: 1,
+            fullUrl: 'https://google.com',
+            expired: false,
+        });
 
         const result = await useCase.redirect('my-link');
 
         expect(repository.getForRedirect).toHaveBeenCalledWith('my-link');
-        expect(repository.addClick).toHaveBeenCalledWith('my-link');
-        expect(result).toBe('https://google.com');
+        expect(result.fullUrl).toBe('https://google.com');
     });
 
     it('should throw when url does not exist', async () => {
@@ -52,8 +51,6 @@ describe('RedirectUrlUseCase', () => {
         );
 
         expect(repository.getForRedirect).toHaveBeenCalledWith('invalid-code');
-
-        expect(repository.addClick).not.toHaveBeenCalled();
     });
 
     it('should throw when repository fails', async () => {
@@ -68,6 +65,7 @@ describe('RedirectUrlUseCase', () => {
 
     it('should block an expired url without incrementing clicks', async () => {
         repository.getForRedirect.mockResolvedValue({
+            id: 1,
             fullUrl: 'https://google.com',
             expired: true,
         });
@@ -75,6 +73,5 @@ describe('RedirectUrlUseCase', () => {
         await expect(useCase.redirect('expired-code')).rejects.toThrow(
             'URL expirada'
         );
-        expect(repository.addClick).not.toHaveBeenCalled();
     });
 });

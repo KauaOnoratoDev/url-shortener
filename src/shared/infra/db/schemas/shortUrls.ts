@@ -15,8 +15,6 @@ export const shortUrlsTable = pgTable('short_urls', {
 
     fullUrl: text().notNull(),
 
-    clicks: integer().default(0).notNull(),
-
     userId: text()
         .notNull()
         .references(() => usersTable.id, {

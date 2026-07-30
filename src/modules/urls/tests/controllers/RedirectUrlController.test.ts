@@ -4,9 +4,11 @@ import { RedirectUrlUseCase } from '@modules/urls/useCases/RedirectUrlUseCase';
 import { UrlNotFoundError } from '@shared/errors/UrlNotFoundError';
 import { ExpiredUrlError } from '@shared/errors/ExpiredUrlError';
 import { errorHandler } from '@shared/middlewares/errorHandler';
+import { UrlAccessTracker } from '@modules/urls/services/UrlAccessTracker';
 
 describe('RedirectUrlController', () => {
     let redirectUrlUseCase: jest.Mocked<RedirectUrlUseCase>;
+    let urlAccessTracker: jest.Mocked<UrlAccessTracker>;
     let controller: RedirectUrlController;
 
     let req: Partial<Request>;
@@ -17,7 +19,14 @@ describe('RedirectUrlController', () => {
             redirect: jest.fn(),
         } as unknown as jest.Mocked<RedirectUrlUseCase>;
 
-        controller = new RedirectUrlController(redirectUrlUseCase);
+        urlAccessTracker = {
+            track: jest.fn().mockResolvedValue(undefined),
+        };
+
+        controller = new RedirectUrlController(
+            redirectUrlUseCase,
+            urlAccessTracker
+        );
 
         res = {
             status: jest.fn().mockReturnThis(),
@@ -31,13 +40,52 @@ describe('RedirectUrlController', () => {
             params: {
                 shortUrlCode: 'abc123',
             },
+            headers: {
+                'user-agent': 'Mozilla/5.0',
+                'cf-ipcountry': 'BR',
+            },
+            get: jest.fn().mockReturnValue('Mozilla/5.0'),
         };
 
-        redirectUrlUseCase.redirect.mockResolvedValue('https://google.com');
+        redirectUrlUseCase.redirect.mockResolvedValue({
+            id: 1,
+            fullUrl: 'https://google.com',
+            expired: false,
+        });
 
         await controller.handle(req as Request, res as Response);
 
         expect(redirectUrlUseCase.redirect).toHaveBeenCalledWith('abc123');
+
+        expect(res.redirect).toHaveBeenCalledWith('https://google.com');
+        expect(urlAccessTracker.track).toHaveBeenCalledWith({
+            shortUrlId: 1,
+            userAgent: 'Mozilla/5.0',
+            headers: req.headers,
+            accessedAt: expect.any(Date),
+        });
+    });
+
+    it('should redirect even when analytics persistence fails', async () => {
+        req = {
+            params: {
+                shortUrlCode: 'abc123',
+            },
+            headers: {},
+            get: jest.fn().mockReturnValue(undefined),
+        };
+        redirectUrlUseCase.redirect.mockResolvedValue({
+            id: 1,
+            fullUrl: 'https://google.com',
+            expired: false,
+        });
+        urlAccessTracker.track.mockRejectedValue(
+            new Error('Analytics database unavailable')
+        );
+
+        await expect(
+            controller.handle(req as Request, res as Response)
+        ).resolves.toBeUndefined();
 
         expect(res.redirect).toHaveBeenCalledWith('https://google.com');
     });
@@ -83,6 +131,8 @@ describe('RedirectUrlController', () => {
             params: {
                 shortUrlCode: 'abc123',
             },
+            headers: {},
+            get: jest.fn(),
         };
 
         redirectUrlUseCase.redirect.mockRejectedValue(

@@ -7,7 +7,6 @@ export interface ShortUrlResponseDTO {
     id: number;
     shortUrlCode: string | null;
     fullUrl: string;
-    clicks: number;
     createdAt: Date;
     expiresAt: Date | null;
     expired?: boolean;
@@ -16,7 +15,7 @@ export interface ShortUrlResponseDTO {
 
 export type ShortUrlRedirectDTO = Pick<
     ShortUrlResponseDTO,
-    'fullUrl' | 'expired'
+    'id' | 'fullUrl' | 'expired'
 >;
 
 export interface UpdateShortUrlDTO {
