@@ -1,86 +1,77 @@
 import { UpdateUrlUseCase } from '@modules/urls/useCases/UpdateUrlUseCase';
 import { ShortUrlRepository } from '@modules/urls/repositories/ShortUrlRepository';
+import { ValidateUrlProvider } from '@shared/providers/ValidateUrlProvider';
 
 describe('UpdateUrlUseCase', () => {
     let repository: jest.Mocked<ShortUrlRepository>;
+    let validateUrlProvider: jest.Mocked<ValidateUrlProvider>;
     let useCase: UpdateUrlUseCase;
 
     beforeEach(() => {
         repository = {
-            findById: jest.fn(),
             update: jest.fn(),
         } as unknown as jest.Mocked<ShortUrlRepository>;
-
-        useCase = new UpdateUrlUseCase(repository);
+        validateUrlProvider = {
+            validate: jest.fn(),
+        } as unknown as jest.Mocked<ValidateUrlProvider>;
+        useCase = new UpdateUrlUseCase(repository, validateUrlProvider);
     });
 
-    it('should update the url successfully', async () => {
-        const url = {
+    it('validates and updates an owned URL in one repository operation', async () => {
+        const updatedUrl = {
             id: 1,
             shortUrlCode: 'abc123',
-            fullUrl: 'https://google.com',
+            fullUrl: 'https://github.com',
             createdAt: new Date(),
             expiresAt: null,
         };
-
-        const updatedUrl = {
-            ...url,
-            fullUrl: 'https://github.com',
-        };
-
-        repository.findById.mockResolvedValue(url);
         repository.update.mockResolvedValue(updatedUrl);
 
-        const result = await useCase.execute(1, 'user-1', {
-            fullUrl: 'https://github.com',
-        });
+        await expect(
+            useCase.execute(1, 'user-1', {
+                fullUrl: 'https://github.com',
+            })
+        ).resolves.toEqual(updatedUrl);
 
-        expect(repository.findById).toHaveBeenCalledWith(1, 'user-1');
-
+        expect(validateUrlProvider.validate).toHaveBeenCalledWith(
+            'https://github.com'
+        );
         expect(repository.update).toHaveBeenCalledWith(1, 'user-1', {
             fullUrl: 'https://github.com',
         });
-
-        expect(result).toEqual(updatedUrl);
     });
 
-    it('should throw when url does not exist', async () => {
-        repository.findById.mockResolvedValue(undefined);
+    it('rejects unsupported URL protocols before writing', async () => {
+        validateUrlProvider.validate.mockImplementation(() => {
+            throw new Error('A URL deve utilizar HTTP ou HTTPS');
+        });
+
+        await expect(
+            useCase.execute(1, 'user-1', {
+                fullUrl: 'javascript:alert(1)',
+            })
+        ).rejects.toThrow('A URL deve utilizar HTTP ou HTTPS');
+
+        expect(repository.update).not.toHaveBeenCalled();
+    });
+
+    it('throws when the URL does not exist or belongs to another user', async () => {
+        repository.update.mockResolvedValue(undefined);
 
         await expect(
             useCase.execute(1, 'user-1', {
                 fullUrl: 'https://google.com',
             })
         ).rejects.toThrow('URL não encontrada');
-
-        expect(repository.update).not.toHaveBeenCalled();
     });
 
-    it('should throw when findById fails', async () => {
-        repository.findById.mockRejectedValue(new Error('Database error'));
+    it('propagates repository failures', async () => {
+        repository.update.mockRejectedValue(new Error('Database error'));
 
         await expect(
             useCase.execute(1, 'user-1', {
                 fullUrl: 'https://google.com',
             })
-        ).rejects.toThrow('Database error');
-    });
-
-    it('should throw when update fails', async () => {
-        const url = {
-            id: 1,
-            shortUrlCode: 'abc123',
-            fullUrl: 'https://google.com',
-            createdAt: new Date(),
-            expiresAt: null,
-        };
-
-        repository.findById.mockResolvedValue(url);
-
-        repository.update.mockRejectedValue(new Error('Database error'));
-
-        await expect(
-            useCase.execute(1, 'user-1', { fullUrl: url.fullUrl })
         ).rejects.toThrow('Database error');
     });
 });

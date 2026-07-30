@@ -39,6 +39,18 @@ describe('CreateShortUrlController', () => {
         expect(createShortUrlUseCase.execute).not.toHaveBeenCalled();
     });
 
+    it('returns 400 for a null JSON body instead of throwing a TypeError', async () => {
+        req = {
+            body: null,
+            user: { userId: 'user-1', tokenType: 'access' },
+        };
+
+        await controller.handle(req as Request, res as Response);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(createShortUrlUseCase.execute).not.toHaveBeenCalled();
+    });
+
     it('should return 401 if the request is not authenticated', async () => {
         req = {
             body: {

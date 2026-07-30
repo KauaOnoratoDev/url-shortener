@@ -77,4 +77,20 @@ describe('UpdateUrlController', () => {
             fullUrl: 'https://github.com',
         });
     });
+
+    it.each([
+        [{ id: 'not-a-number' }, { fullUrl: 'https://example.com' }],
+        [{ id: '1' }, null],
+    ])('rejects invalid route or body input', async (params, body) => {
+        req = {
+            params,
+            body,
+            user: { userId: 'user-1', tokenType: 'access' },
+        };
+
+        await controller.handle(req as Request, res as Response);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(updateUrlUseCase.execute).not.toHaveBeenCalled();
+    });
 });

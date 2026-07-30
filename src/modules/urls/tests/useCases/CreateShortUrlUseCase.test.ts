@@ -2,109 +2,96 @@ import { CreateShortUrlUseCase } from '@modules/urls/useCases/CreateShortUrlUseC
 import { ShortUrlRepository } from '@modules/urls/repositories/ShortUrlRepository';
 import { HashidsProvider } from '@providers/HashidsProvider';
 import { ValidateUrlProvider } from '@shared/providers/ValidateUrlProvider';
+import { UserPlanRepository } from '@modules/users/repositories/UserPlanRepository';
 
 describe('CreateShortUrlUseCase', () => {
     let repository: jest.Mocked<ShortUrlRepository>;
     let hashProvider: jest.Mocked<HashidsProvider>;
     let validateUrlProvider: jest.Mocked<ValidateUrlProvider>;
-
+    let userPlanRepository: jest.Mocked<UserPlanRepository>;
     let useCase: CreateShortUrlUseCase;
 
     beforeEach(() => {
+        process.env.FREE_PLAN_EXPIRATION = '30d';
+        process.env.PREMIUM_PLAN_EXPIRATION = '365d';
         repository = {
             create: jest.fn(),
-            updateShortUrlCode: jest.fn(),
-            updateShortUrlExpiresAt: jest.fn(),
-            getOriginalUrl: jest.fn(),
-            getUrlsByUserId: jest.fn(),
         } as unknown as jest.Mocked<ShortUrlRepository>;
-
         hashProvider = {
             encode: jest.fn(),
-        } as jest.Mocked<HashidsProvider>;
-
+        } as unknown as jest.Mocked<HashidsProvider>;
         validateUrlProvider = {
             validate: jest.fn(),
         } as unknown as jest.Mocked<ValidateUrlProvider>;
-
+        userPlanRepository = {
+            findPlanByUserId: jest.fn().mockResolvedValue('free'),
+        };
         useCase = new CreateShortUrlUseCase(
             repository,
             hashProvider,
-            validateUrlProvider
+            validateUrlProvider,
+            userPlanRepository
         );
     });
 
-    it('should create a short url successfully', async () => {
-        repository.create.mockResolvedValue(100);
-        repository.updateShortUrlCode.mockResolvedValue(undefined);
+    it('creates the URL atomically with its code and expiration', async () => {
+        const now = Date.now();
+        jest.spyOn(Date, 'now').mockReturnValue(now);
         hashProvider.encode.mockReturnValue('abc123');
+        repository.create.mockImplementation(async (data, generateCode) => {
+            expect(data).toEqual({
+                fullUrl: 'https://google.com',
+                userId: 'user-1',
+                expiresAt: new Date(now + 30 * 24 * 60 * 60 * 1000),
+            });
 
-        const result = await useCase.execute({
-            fullUrl: 'https://google.com',
-            userId: 'user-1',
+            return generateCode(100);
         });
 
-        expect(repository.create).toHaveBeenCalledWith({
-            fullUrl: 'https://google.com',
-            userId: 'user-1',
-        });
+        await expect(
+            useCase.execute({
+                fullUrl: 'https://google.com',
+                userId: 'user-1',
+            })
+        ).resolves.toBe('abc123');
 
+        expect(validateUrlProvider.validate).toHaveBeenCalledWith(
+            'https://google.com'
+        );
         expect(hashProvider.encode).toHaveBeenCalledWith(100);
-
-        expect(repository.updateShortUrlCode).toHaveBeenCalledWith(
-            100,
-            'abc123'
-        );
-
-        expect(result).toBe('abc123');
     });
 
-    it('should throw if repository.create fails', async () => {
-        repository.create.mockRejectedValue(new Error('Database error'));
+    it('uses the premium expiration configured for premium users', async () => {
+        userPlanRepository.findPlanByUserId.mockResolvedValue('premium');
+        repository.create.mockResolvedValue('premium-code');
 
-        await expect(
-            useCase.execute({
-                fullUrl: 'https://google.com',
-                userId: 'user-1',
-            })
-        ).rejects.toThrow('Database error');
-
-        expect(hashProvider.encode).not.toHaveBeenCalled();
-        expect(repository.updateShortUrlCode).not.toHaveBeenCalled();
-    });
-
-    it('should throw if hash provider fails', async () => {
-        repository.create.mockResolvedValue(100);
-        hashProvider.encode.mockImplementation(() => {
-            throw new Error('Hash error');
+        await useCase.execute({
+            fullUrl: 'https://example.com',
+            userId: 'user-1',
         });
 
-        await expect(
-            useCase.execute({
-                fullUrl: 'https://google.com',
-                userId: 'user-1',
-            })
-        ).rejects.toThrow('Hash error');
-
-        expect(repository.updateShortUrlCode).not.toHaveBeenCalled();
-    });
-
-    it('should throw if updateShortUrlCode fails', async () => {
-        repository.create.mockResolvedValue(100);
-        hashProvider.encode.mockReturnValue('abc123');
-        repository.updateShortUrlCode.mockRejectedValue(
-            new Error('Update error')
+        expect(repository.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                expiresAt: expect.any(Date),
+            }),
+            expect.any(Function)
         );
+    });
+
+    it('does not write a partial row when expiration is misconfigured', async () => {
+        process.env.FREE_PLAN_EXPIRATION = 'invalid';
 
         await expect(
             useCase.execute({
                 fullUrl: 'https://google.com',
                 userId: 'user-1',
             })
-        ).rejects.toThrow('Update error');
+        ).rejects.toThrow('Invalid duration configured.');
+
+        expect(repository.create).not.toHaveBeenCalled();
     });
 
-    it('should throw if url is invalid', async () => {
+    it('does not access the repository when the URL is invalid', async () => {
         validateUrlProvider.validate.mockImplementation(() => {
             throw new Error('URL inválida');
         });
@@ -117,7 +104,5 @@ describe('CreateShortUrlUseCase', () => {
         ).rejects.toThrow('URL inválida');
 
         expect(repository.create).not.toHaveBeenCalled();
-        expect(hashProvider.encode).not.toHaveBeenCalled();
-        expect(repository.updateShortUrlCode).not.toHaveBeenCalled();
     });
 });

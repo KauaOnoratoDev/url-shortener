@@ -56,4 +56,16 @@ describe('DeleteUrlController', () => {
 
         expect(deleteUrlUseCase.execute).toHaveBeenCalledWith(1, 'user-1');
     });
+
+    it('rejects a non-numeric id before accessing the use case', async () => {
+        req = {
+            params: { id: 'invalid' },
+            user: { userId: 'user-1', tokenType: 'access' },
+        };
+
+        await controller.handle(req as Request, res as Response);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(deleteUrlUseCase.execute).not.toHaveBeenCalled();
+    });
 });

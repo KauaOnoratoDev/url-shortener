@@ -1,14 +1,15 @@
 import {
-    createShortUrlDTO,
+    CreateShortUrlRepositoryDTO,
     ShortUrlRedirectDTO,
     ShortUrlResponseDTO,
     UpdateShortUrlDTO,
 } from '@modules/urls/DTOs';
 
 export interface ShortUrlRepository {
-    create(data: createShortUrlDTO): Promise<number>;
-    updateShortUrlCode(urlId: number, code: string): Promise<void>;
-    updateShortUrlExpiresAt(urlId: number, expiresAt: Date): Promise<void>;
+    create(
+        data: CreateShortUrlRepositoryDTO,
+        generateCode: (urlId: number) => string
+    ): Promise<string>;
     getForRedirect(
         shortUrlCode: string
     ): Promise<ShortUrlRedirectDTO | undefined>;
@@ -22,6 +23,6 @@ export interface ShortUrlRepository {
         userId: string,
         data: UpdateShortUrlDTO
     ): Promise<ShortUrlResponseDTO | undefined>;
-    delete(id: number, userId: string): Promise<void>;
-    addAlias(id: number, alias: string, userId: string): Promise<void>;
+    delete(id: number, userId: string): Promise<boolean>;
+    addAlias(id: number, alias: string, userId: string): Promise<boolean>;
 }

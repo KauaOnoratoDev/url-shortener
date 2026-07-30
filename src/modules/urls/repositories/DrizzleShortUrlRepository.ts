@@ -1,76 +1,91 @@
-import { and, eq, lt, or } from 'drizzle-orm';
+import { and, eq, or, sql } from 'drizzle-orm';
 import { ShortUrlRepository } from '@modules/urls/repositories/ShortUrlRepository';
 import { shortUrlsTable as urls } from '@shared/infra/db/schemas/shortUrls';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import {
-    createShortUrlDTO,
+    CreateShortUrlRepositoryDTO,
     ShortUrlResponseDTO,
     UpdateShortUrlDTO,
 } from '@modules/urls/DTOs';
+import { UrlIdentifierAlreadyExistsError } from '@shared/errors/UrlIdentifierAlreadyExistsError';
+
+const isExpired = sql<boolean>`${urls.expired} OR (
+    ${urls.expiresAt} IS NOT NULL
+    AND ${urls.expiresAt} <= CURRENT_TIMESTAMP
+)`;
+
+const shortUrlSelection = {
+    id: urls.id,
+    shortUrlCode: urls.shortUrlCode,
+    fullUrl: urls.fullUrl,
+    createdAt: urls.createdAt,
+    expiresAt: urls.expiresAt,
+    expired: isExpired,
+    alias: urls.alias,
+};
+
+function isUniqueViolation(error: unknown): boolean {
+    if (!error || typeof error !== 'object') return false;
+
+    if ('code' in error && error.code === '23505') return true;
+
+    return (
+        'cause' in error &&
+        error.cause !== error &&
+        isUniqueViolation(error.cause)
+    );
+}
 
 export class DrizzleShortUrlRepository implements ShortUrlRepository {
     constructor(private db: NodePgDatabase) {}
 
-    async create({
-        fullUrl,
-        userId: resolvedUserId,
-    }: createShortUrlDTO): Promise<number> {
-        const [result] = await this.db
-            .insert(urls)
-            .values({
-                fullUrl,
-                userId: resolvedUserId as string,
-            })
-            .returning({ id: urls.id });
+    async create(
+        { fullUrl, userId, expiresAt }: CreateShortUrlRepositoryDTO,
+        generateCode: (urlId: number) => string
+    ): Promise<string> {
+        try {
+            return await this.db.transaction(async (transaction) => {
+                const [createdUrl] = await transaction
+                    .insert(urls)
+                    .values({
+                        fullUrl,
+                        userId,
+                        expiresAt,
+                    })
+                    .returning({ id: urls.id });
 
-        if (!result) {
-            throw new Error('Could not create short URL.');
+                if (!createdUrl) {
+                    throw new Error('Could not create short URL.');
+                }
+
+                const shortUrlCode = generateCode(createdUrl.id);
+                const [updatedUrl] = await transaction
+                    .update(urls)
+                    .set({ shortUrlCode })
+                    .where(eq(urls.id, createdUrl.id))
+                    .returning({ shortUrlCode: urls.shortUrlCode });
+
+                if (!updatedUrl?.shortUrlCode) {
+                    throw new Error('Could not assign a short URL code.');
+                }
+
+                return updatedUrl.shortUrlCode;
+            });
+        } catch (error) {
+            if (isUniqueViolation(error)) {
+                throw new UrlIdentifierAlreadyExistsError();
+            }
+
+            throw error;
         }
-
-        return result.id;
-    }
-
-    async updateShortUrlCode(urlId: number, code: string): Promise<void> {
-        await this.db
-            .update(urls)
-            .set({
-                shortUrlCode: code,
-            })
-            .where(eq(urls.id, urlId));
-    }
-
-    async updateShortUrlExpiresAt(
-        urlId: number,
-        expiresAt: Date
-    ): Promise<void> {
-        await this.db
-            .update(urls)
-            .set({
-                expiresAt,
-            })
-            .where(eq(urls.id, urlId));
     }
 
     async getForRedirect(shortUrlCode: string) {
-        await this.db
-            .update(urls)
-            .set({ expired: true })
-            .where(
-                and(
-                    or(
-                        eq(urls.shortUrlCode, shortUrlCode),
-                        eq(urls.alias, shortUrlCode)
-                    ),
-                    eq(urls.expired, false),
-                    lt(urls.expiresAt, new Date())
-                )
-            );
-
         const result = await this.db
             .select({
                 id: urls.id,
                 fullUrl: urls.fullUrl,
-                expired: urls.expired,
+                expired: isExpired,
             })
             .from(urls)
             .where(
@@ -90,15 +105,7 @@ export class DrizzleShortUrlRepository implements ShortUrlRepository {
 
     async getUrlsByUserId(userId: string): Promise<ShortUrlResponseDTO[]> {
         const result = await this.db
-            .select({
-                id: urls.id,
-                shortUrlCode: urls.shortUrlCode,
-                fullUrl: urls.fullUrl,
-                createdAt: urls.createdAt,
-                expiresAt: urls.expiresAt,
-                expired: urls.expired,
-                alias: urls.alias,
-            })
+            .select(shortUrlSelection)
             .from(urls)
             .where(eq(urls.userId, userId));
 
@@ -110,15 +117,7 @@ export class DrizzleShortUrlRepository implements ShortUrlRepository {
         userId: string
     ): Promise<ShortUrlResponseDTO | undefined> {
         const result = await this.db
-            .select({
-                id: urls.id,
-                shortUrlCode: urls.shortUrlCode,
-                fullUrl: urls.fullUrl,
-                createdAt: urls.createdAt,
-                expiresAt: urls.expiresAt,
-                expired: urls.expired,
-                alias: urls.alias,
-            })
+            .select(shortUrlSelection)
             .from(urls)
             .where(and(eq(urls.id, id), eq(urls.userId, userId)))
             .limit(1);
@@ -131,24 +130,43 @@ export class DrizzleShortUrlRepository implements ShortUrlRepository {
         userId: string,
         data: UpdateShortUrlDTO
     ): Promise<ShortUrlResponseDTO | undefined> {
-        await this.db
+        const [updatedUrl] = await this.db
             .update(urls)
-            .set({ fullUrl: data.fullUrl })
-            .where(and(eq(urls.id, id), eq(urls.userId, userId)));
+            .set(data)
+            .where(and(eq(urls.id, id), eq(urls.userId, userId)))
+            .returning(shortUrlSelection);
 
-        return this.findById(id, userId);
+        return updatedUrl;
     }
 
-    async delete(id: number, userId: string) {
-        await this.db
+    async delete(id: number, userId: string): Promise<boolean> {
+        const deletedUrls = await this.db
             .delete(urls)
-            .where(and(eq(urls.id, id), eq(urls.userId, userId)));
+            .where(and(eq(urls.id, id), eq(urls.userId, userId)))
+            .returning({ id: urls.id });
+
+        return deletedUrls.length > 0;
     }
 
-    async addAlias(id: number, alias: string, userId: string): Promise<void> {
-        await this.db
-            .update(urls)
-            .set({ alias })
-            .where(and(eq(urls.id, id), eq(urls.userId, userId)));
+    async addAlias(
+        id: number,
+        alias: string,
+        userId: string
+    ): Promise<boolean> {
+        try {
+            const updatedUrls = await this.db
+                .update(urls)
+                .set({ alias })
+                .where(and(eq(urls.id, id), eq(urls.userId, userId)))
+                .returning({ id: urls.id });
+
+            return updatedUrls.length > 0;
+        } catch (error) {
+            if (isUniqueViolation(error)) {
+                throw new UrlIdentifierAlreadyExistsError();
+            }
+
+            throw error;
+        }
     }
 }

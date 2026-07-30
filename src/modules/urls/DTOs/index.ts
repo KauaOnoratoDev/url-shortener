@@ -1,6 +1,10 @@
-export type createShortUrlDTO = {
+export type CreateShortUrlDTO = {
     fullUrl: string;
     userId: string;
+};
+
+export type CreateShortUrlRepositoryDTO = CreateShortUrlDTO & {
+    expiresAt: Date;
 };
 
 export interface ShortUrlResponseDTO {
@@ -19,5 +23,5 @@ export type ShortUrlRedirectDTO = Pick<
 >;
 
 export interface UpdateShortUrlDTO {
-    fullUrl?: string;
+    fullUrl: string;
 }
