@@ -1,13 +1,24 @@
 import Hashids from 'hashids';
-import 'dotenv/config';
+import { getHashidsConfig, HashidsConfig } from '@shared/config/hashids';
 
 export class HashidsProvider {
-    encode(urlId: number): string {
-        const SALT = process.env.SALT;
-        const MIN_LENGHT = Number(process.env.MIN_LENGHT);
-        const ALPHABET = process.env.ALPHABET;
-        const hashids = new Hashids(SALT, MIN_LENGHT, ALPHABET);
+    private readonly hashids: Hashids;
 
-        return hashids.encode(urlId);
+    constructor(config: HashidsConfig = getHashidsConfig()) {
+        this.hashids = new Hashids(
+            config.salt,
+            config.minLength,
+            config.alphabet
+        );
+    }
+
+    encode(urlId: number): string {
+        const code = this.hashids.encode(urlId);
+
+        if (!code) {
+            throw new Error('Could not generate a short URL code.');
+        }
+
+        return code;
     }
 }

@@ -6,9 +6,19 @@ export function calculateExpirationDate(duration: string): Date {
 
     const milliseconds = ms(expiresIn);
 
-    if (milliseconds === undefined || !Number.isFinite(milliseconds)) {
+    if (
+        milliseconds === undefined ||
+        !Number.isFinite(milliseconds) ||
+        milliseconds <= 0
+    ) {
         throw new Error('Invalid duration configured.');
     }
 
-    return new Date(now + milliseconds);
+    const expirationDate = new Date(now + milliseconds);
+
+    if (Number.isNaN(expirationDate.getTime())) {
+        throw new Error('Invalid duration configured.');
+    }
+
+    return expirationDate;
 }

@@ -15,4 +15,10 @@ describe('calculateExpirationDate', () => {
             'Invalid duration configured.'
         );
     });
+
+    it.each(['0ms', '-1d'])('rejects a non-positive duration (%s)', (value) => {
+        expect(() => calculateExpirationDate(value)).toThrow(
+            'Invalid duration configured.'
+        );
+    });
 });
