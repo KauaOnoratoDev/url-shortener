@@ -41,6 +41,7 @@ describe('RegisterUserUseCase', () => {
             email: 'maria@example.com',
             created_at: new Date(),
             updated_at: new Date(),
+            plan: 'free' as const,
         };
         usersRepository.findByEmail.mockResolvedValue(null);
         usersRepository.create.mockResolvedValue(user);
@@ -70,6 +71,7 @@ describe('RegisterUserUseCase', () => {
             passwordHash: 'ValidHash1!',
             createdAt: new Date(),
             updatedAt: new Date(),
+            plan: 'free',
         });
 
         await expect(
@@ -83,6 +85,21 @@ describe('RegisterUserUseCase', () => {
         expect(usersRepository.create).not.toHaveBeenCalled();
         expect(generateUuidProvider.generate).not.toHaveBeenCalled();
         expect(hashProvider.hash).not.toHaveBeenCalled();
+    });
+
+    it('handles an email conflict that happens during insertion', async () => {
+        usersRepository.findByEmail.mockResolvedValue(null);
+        usersRepository.create.mockResolvedValue(null);
+        generateUuidProvider.generate.mockResolvedValue('user-2');
+        hashProvider.hash.mockResolvedValue('ValidHash1!');
+
+        await expect(
+            useCase.execute({
+                name: 'Maria Silva',
+                email: 'maria@example.com',
+                password: 'Strong@123',
+            })
+        ).rejects.toBeInstanceOf(UserAlreadyExistsError);
     });
 
     it('should propagate repository errors while checking the email', async () => {

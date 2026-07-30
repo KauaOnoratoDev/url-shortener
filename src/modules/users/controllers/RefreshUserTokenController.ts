@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { getAuthConfig } from '@shared/config/auth';
 import {
+    clearRefreshTokenCookie,
     getRefreshTokenFromRequest,
     setRefreshTokenCookie,
 } from '@shared/infra/http/cookies';
@@ -15,19 +16,24 @@ export class RefreshUserTokenController {
             return res.status(401).json({ message: 'Refresh token ausente' });
         }
 
-        const result = await this.refreshUserTokenUseCase.execute({
-            refreshToken,
-        });
+        try {
+            const result = await this.refreshUserTokenUseCase.execute({
+                refreshToken,
+            });
 
-        setRefreshTokenCookie(
-            res,
-            result.refreshToken,
-            getAuthConfig().refreshTokenExpiresIn
-        );
+            setRefreshTokenCookie(
+                res,
+                result.refreshToken,
+                getAuthConfig().refreshTokenExpiresIn
+            );
 
-        return res.status(200).json({
-            userId: result.userId,
-            token: result.token,
-        });
+            return res.status(200).json({
+                userId: result.userId,
+                token: result.token,
+            });
+        } catch (error) {
+            clearRefreshTokenCookie(res);
+            throw error;
+        }
     }
 }

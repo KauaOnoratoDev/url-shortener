@@ -34,6 +34,7 @@ describe('RegisterUserController', () => {
             email: 'maria@example.com',
             created_at: new Date(),
             updated_at: new Date(),
+            plan: 'free' as const,
         };
         registerUserUseCase.execute.mockResolvedValue(user);
 
@@ -42,6 +43,33 @@ describe('RegisterUserController', () => {
         expect(registerUserUseCase.execute).toHaveBeenCalledWith(req.body);
         expect(res.status).toHaveBeenCalledWith(201);
         expect(res.json).toHaveBeenCalledWith(user);
+    });
+
+    it('does not allow a public registration to choose a paid plan', async () => {
+        req = {
+            body: {
+                name: 'Maria Silva',
+                email: 'maria@example.com',
+                password: 'Strong@123',
+                plan: 'premium',
+            },
+        };
+        registerUserUseCase.execute.mockResolvedValue({
+            id: 'user-1',
+            name: 'Maria Silva',
+            email: 'maria@example.com',
+            created_at: new Date(),
+            updated_at: new Date(),
+            plan: 'free',
+        });
+
+        await controller.handle(req as Request, res as Response);
+
+        expect(registerUserUseCase.execute).toHaveBeenCalledWith({
+            name: 'Maria Silva',
+            email: 'maria@example.com',
+            password: 'Strong@123',
+        });
     });
 
     it('should propagate errors from the use case', async () => {

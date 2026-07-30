@@ -25,17 +25,20 @@ describe('DrizzleUsersRepository', () => {
                 name: 'Maria Silva',
                 email: 'maria@example.com',
                 passwordHash: 'ValidHash1!',
+                plan: 'free',
                 createdAt,
                 updatedAt,
             },
         ]);
-        const values = jest.fn().mockReturnValue({ returning });
+        const onConflictDoNothing = jest.fn().mockReturnValue({ returning });
+        const values = jest.fn().mockReturnValue({ onConflictDoNothing });
         (db.insert as jest.Mock).mockReturnValue({ values });
         const result = await repository.create({
             id: 'user-1',
             name: 'Maria Silva',
             email: 'maria@example.com',
             passwordHash: 'ValidHash1!',
+            plan: 'free',
         });
 
         expect(values).toHaveBeenCalledWith({
@@ -43,14 +46,34 @@ describe('DrizzleUsersRepository', () => {
             name: 'Maria Silva',
             email: 'maria@example.com',
             passwordHash: 'ValidHash1!',
+            plan: 'free',
         });
+        expect(onConflictDoNothing).toHaveBeenCalled();
         expect(result).toEqual({
             id: 'user-1',
             name: 'Maria Silva',
             email: 'maria@example.com',
+            plan: 'free',
             created_at: createdAt,
             updated_at: updatedAt,
         });
+    });
+
+    it('returns null when a concurrent registration wins the email conflict', async () => {
+        const returning = jest.fn().mockResolvedValue([]);
+        const onConflictDoNothing = jest.fn().mockReturnValue({ returning });
+        const values = jest.fn().mockReturnValue({ onConflictDoNothing });
+        (db.insert as jest.Mock).mockReturnValue({ values });
+
+        await expect(
+            repository.create({
+                id: 'user-2',
+                name: 'Maria Silva',
+                email: 'maria@example.com',
+                passwordHash: 'ValidHash1!',
+                plan: 'free',
+            })
+        ).resolves.toBeNull();
     });
 
     it('should find a user by email', async () => {
@@ -61,6 +84,7 @@ describe('DrizzleUsersRepository', () => {
             passwordHash: 'ValidHash1!',
             createdAt: new Date(),
             updatedAt: new Date(),
+            plan: 'free' as const,
         };
         const where = jest.fn().mockResolvedValue([user]);
         const from = jest.fn().mockReturnValue({ where });
@@ -76,7 +100,8 @@ describe('DrizzleUsersRepository', () => {
                 user.email,
                 user.passwordHash,
                 user.createdAt,
-                user.updatedAt
+                user.updatedAt,
+                user.plan
             )
         );
     });

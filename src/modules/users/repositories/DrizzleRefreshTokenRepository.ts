@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, eq, gt, isNull } from 'drizzle-orm';
 import { db } from '@infra/db';
 import { RefreshToken } from '../types/RefreshToken';
 import { RefreshTokenRepository } from './RefreshTokenRepository';
@@ -39,8 +39,23 @@ export class DrizzleRefreshTokenRepository implements RefreshTokenRepository {
             .where(eq(refreshTokensTable.id, id));
     }
 
-    async rotate(currentId: string, nextToken: RefreshToken): Promise<void> {
-        await db.transaction(async (transaction) => {
+    async rotate(currentId: string, nextToken: RefreshToken): Promise<boolean> {
+        return db.transaction(async (transaction) => {
+            const revokedTokens = await transaction
+                .update(refreshTokensTable)
+                .set({ revokedAt: new Date() })
+                .where(
+                    and(
+                        eq(refreshTokensTable.id, currentId),
+                        eq(refreshTokensTable.userId, nextToken.userId),
+                        isNull(refreshTokensTable.revokedAt),
+                        gt(refreshTokensTable.expiresIn, new Date())
+                    )
+                )
+                .returning({ id: refreshTokensTable.id });
+
+            if (revokedTokens.length === 0) return false;
+
             await transaction.insert(refreshTokensTable).values({
                 id: nextToken.id,
                 userId: nextToken.userId,
@@ -49,10 +64,7 @@ export class DrizzleRefreshTokenRepository implements RefreshTokenRepository {
                 revokedAt: nextToken.revokedAt ?? null,
             });
 
-            await transaction
-                .update(refreshTokensTable)
-                .set({ revokedAt: new Date() })
-                .where(eq(refreshTokensTable.id, currentId));
+            return true;
         });
     }
 }

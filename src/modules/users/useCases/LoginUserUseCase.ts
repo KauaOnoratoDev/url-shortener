@@ -2,12 +2,15 @@ import { HashProvider } from '@shared/providers/HashProvider';
 import { UsersRepository } from '../repositories/UsersRepository';
 import { TokenProvider } from '@shared/providers/TokenProvider';
 import { LoginUserDTO, LoginUserResponseDTO } from '../DTOs';
-import { InvalidCredentialsError } from '@shared/errors/UserNotFoundError';
+import { InvalidCredentialsError } from '@shared/errors/InvalidCredentialsError';
 import { RefreshTokenRepository } from '../repositories/RefreshTokenRepository';
 import { GenerateUuidProvider } from '@shared/providers/GenerateUuidProvider';
 import { calculateExpirationDate } from '@shared/utils/calculateExpirationDate';
 import { getAuthConfig } from '@shared/config/auth';
 import { Email } from '../models/Email';
+
+const INVALID_LOGIN_PASSWORD_HASH =
+    '$argon2id$v=19$m=65536,p=4,t=3$yp7SWTdU9Pv0ZMbH/CG/tw$KdeUKS0hSP9gyi6hnmAQuVDiSh/mqFAprbc15Tgexx8';
 
 export class LoginUserUseCase {
     constructor(
@@ -25,16 +28,12 @@ export class LoginUserUseCase {
         const normalizedEmail = Email.create(email).value;
         const user = await this.usersRepository.findByEmail(normalizedEmail);
 
-        if (!user) {
-            throw new InvalidCredentialsError();
-        }
-
         const passwordMatch = await this.hashProvider.compare(
             password,
-            user.passwordHash
+            user?.passwordHash ?? INVALID_LOGIN_PASSWORD_HASH
         );
 
-        if (!passwordMatch) {
+        if (!user || !passwordMatch) {
             throw new InvalidCredentialsError();
         }
 

@@ -8,6 +8,6 @@ export class User {
         readonly passwordHash: string,
         readonly createdAt: Date,
         readonly updatedAt: Date,
-        readonly plan?: PlanValue
+        readonly plan: PlanValue
     ) {}
 }

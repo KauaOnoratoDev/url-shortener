@@ -47,14 +47,19 @@ export class RefreshUserTokenUseCase {
             nextTokenId
         );
 
-        await this.refreshTokenRepository.rotate(storedToken.id, {
-            id: nextTokenId,
-            userId: storedToken.userId,
-            tokenHash: await this.hashProvider.hash(nextRefreshToken),
-            expiresIn: calculateExpirationDate(
-                getAuthConfig().refreshTokenExpiresIn
-            ),
-        });
+        const rotated = await this.refreshTokenRepository.rotate(
+            storedToken.id,
+            {
+                id: nextTokenId,
+                userId: storedToken.userId,
+                tokenHash: await this.hashProvider.hash(nextRefreshToken),
+                expiresIn: calculateExpirationDate(
+                    getAuthConfig().refreshTokenExpiresIn
+                ),
+            }
+        );
+
+        if (!rotated) throw new InvalidTokenError();
 
         return {
             userId: storedToken.userId,

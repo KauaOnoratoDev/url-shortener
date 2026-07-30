@@ -5,9 +5,14 @@ import { db } from '@infra/db';
 import { usersTable as users } from '@infra/db/schemas/users';
 import { User } from '../models/User';
 import { PlanValue } from '../models/Plan';
+import { UserPlanRepository } from './UserPlanRepository';
 
-export class DrizzleUsersRepository implements UsersRepository {
-    async create(data: CreateUserRepositoryDTO): Promise<UserResponseDTO> {
+export class DrizzleUsersRepository
+    implements UsersRepository, UserPlanRepository
+{
+    async create(
+        data: CreateUserRepositoryDTO
+    ): Promise<UserResponseDTO | null> {
         const [user] = await db
             .insert(users)
             .values({
@@ -17,7 +22,10 @@ export class DrizzleUsersRepository implements UsersRepository {
                 passwordHash: data.passwordHash,
                 plan: data.plan,
             })
+            .onConflictDoNothing({ target: users.email })
             .returning();
+
+        if (!user) return null;
 
         const response = {
             id: user.id,

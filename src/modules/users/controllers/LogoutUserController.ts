@@ -10,9 +10,15 @@ export class LogoutUserController {
 
     async handle(req: Request, res: Response): Promise<Response> {
         const refreshToken = getRefreshTokenFromRequest(req);
-        if (refreshToken) await this.logoutUserUseCase.execute(refreshToken);
 
-        clearRefreshTokenCookie(res);
+        try {
+            if (refreshToken) {
+                await this.logoutUserUseCase.execute(refreshToken);
+            }
+        } finally {
+            clearRefreshTokenCookie(res);
+        }
+
         return res.status(204).send();
     }
 }

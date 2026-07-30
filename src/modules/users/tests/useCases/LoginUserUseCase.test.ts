@@ -4,7 +4,7 @@ import { RefreshTokenRepository } from '@modules/users/repositories/RefreshToken
 import { HashProvider } from '@shared/providers/HashProvider';
 import { TokenProvider } from '@shared/providers/TokenProvider';
 import { GenerateUuidProvider } from '@shared/providers/GenerateUuidProvider';
-import { InvalidCredentialsError } from '@shared/errors/UserNotFoundError';
+import { InvalidCredentialsError } from '@shared/errors/InvalidCredentialsError';
 
 describe('LoginUserUseCase', () => {
     let usersRepository: jest.Mocked<UsersRepository>;
@@ -50,6 +50,7 @@ describe('LoginUserUseCase', () => {
             passwordHash: 'password-hash',
             createdAt: new Date(),
             updatedAt: new Date(),
+            plan: 'free',
         });
         hashProvider.compare.mockResolvedValue(true);
         hashProvider.hash.mockResolvedValue('refresh-hash');
@@ -99,6 +100,10 @@ describe('LoginUserUseCase', () => {
         await expect(
             useCase.execute({ email: 'user@example.com', password: 'wrong' })
         ).rejects.toBeInstanceOf(InvalidCredentialsError);
+        expect(hashProvider.compare).toHaveBeenCalledWith(
+            'wrong',
+            expect.stringMatching(/^\$argon2id\$/)
+        );
 
         usersRepository.findByEmail.mockResolvedValue({
             id: 'user-1',
@@ -107,6 +112,7 @@ describe('LoginUserUseCase', () => {
             passwordHash: 'password-hash',
             createdAt: new Date(),
             updatedAt: new Date(),
+            plan: 'free',
         });
         hashProvider.compare.mockResolvedValue(false);
 
